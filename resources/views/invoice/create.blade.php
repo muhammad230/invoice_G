@@ -1,18 +1,67 @@
 @extends('layouts.app')
 
-@section('title', 'Create Invoice — InvoiceFlow')
-
 @php
-    // Shortcut helper so we don't keep writing old(...) with defaults.
-    $oldOr = function ($key, $default = '') {
-        return old($key, $default);
+    $editing = isset($invoice) && $invoice !== null;
+    $pageTitle = $editing ? 'Edit invoice' : 'New Invoice';
+    $pageHeading = $editing ? 'Edit invoice' : 'Create an invoice';
+
+    $oldOr = function ($key, $default = '') use ($editing, $invoice) {
+        if (old($key, null) !== null) {
+            return old($key);
+        }
+        if (!$editing) {
+            return $default;
+        }
+        // Edit mode: fall back to Invoice attributes (no attribute for nested items though).
+        return match ($key) {
+            'client_id'       => old('client_id', $invoice->client_id),
+            'business_name'   => old('business_name', $invoice->business_name),
+            'business_email'  => old('business_email', $invoice->business_email),
+            'business_phone'  => old('business_phone', $invoice->business_phone),
+            'business_address'=> old('business_address', $invoice->business_address),
+            'invoice_number'  => old('invoice_number', $invoice->invoice_number),
+            'invoice_date'    => old('invoice_date', $invoice->invoice_date->format('Y-m-d')),
+            'due_date'        => old('due_date', optional($invoice->due_date)?->format('Y-m-d')),
+            'currency'        => old('currency', $invoice->currency),
+            'tax'             => old('tax', (string) $invoice->tax_percent),
+            'discount'        => old('discount', number_format($invoice->discount / 100, 2, '.', '')),
+            'status'          => old('status', $invoice->status),
+            'notes'           => old('notes', $invoice->notes),
+            default => $default,
+        };
     };
 
-    // After a failed validation we keep item rows. Otherwise start with 1 row.
-    $oldItems = old('items', [
-        ['description' => '', 'quantity' => 1, 'price' => ''],
-    ]);
+    // Item rows: old() on failure, DB rows on edit, empty starter otherwise.
+    if ($errors->any() || old('items')) {
+        $oldItems = old('items', []);
+    } elseif ($editing) {
+        $oldItems = $invoice->items->map(function ($i) {
+            return [
+                'description' => $i->description,
+                'quantity'    => $i->quantity,
+                'price'       => number_format($i->price / 100, 2, '.', ''),
+            ];
+        })->all();
+    } else {
+        $oldItems = [
+            ['description' => '', 'quantity' => 1, 'price' => ''],
+        ];
+    }
+
+    $oldItems = $oldItems ?: [['description' => '', 'quantity' => 1, 'price' => '']];
+
+    // Is the user authenticated? If yes -> persist + PDF buttons available.
+    $authed = Auth::check();
+
+    // For the "return to invoice builder" link after adding a new client from modal/dropdown.
+    if ($editing) {
+        $clientReturnUrl = route('invoices.edit', $invoice);
+    } else {
+        $clientReturnUrl = route('invoices.create');
+    }
 @endphp
+
+@section('title', $pageTitle . ' — InvoiceFlow')
 
 @section('content')
 <section class="py-4 py-lg-5">
@@ -22,45 +71,60 @@
             <div>
                 <span class="section-label mb-2">
                     <i class="bi bi-file-earmark-plus me-1"></i>
-                    New Invoice
+                    {{ $pageTitle }}
                 </span>
-                <h1 class="mb-0" style="font-size: clamp(1.75rem, 3vw, 2.25rem);">Create an invoice</h1>
+                <h1 class="mb-0" style="font-size: clamp(1.75rem, 3vw, 2.25rem);">{{ $pageHeading }}</h1>
+                @if ($editing)
+                    <p class="ink-soft mb-0 mt-1">
+                        Invoice <strong>{{ $invoice->invoice_number }}</strong> · updating will recalculate all totals.
+                    </p>
+                @endif
             </div>
-            <a href="{{ route('home') }}" class="btn btn-outline-ink">
-                <i class="bi bi-arrow-left"></i>
-                Back to home
-            </a>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <a href="{{ $authed ? route('invoices.index') : route('home') }}" class="btn btn-outline-ink">
+                    <i class="bi bi-arrow-left"></i>
+                    {{ $authed ? 'Back to invoices' : 'Back to home' }}
+                </a>
+                @if ($editing)
+                    <a href="{{ route('invoices.show', $invoice) }}" class="btn btn-outline-ink">
+                        <i class="bi bi-eye me-1"></i> View
+                    </a>
+                @endif
+            </div>
         </div>
 
-        {{-- Validation errors (from PDF download submit) --}}
-        @if ($errors->any())
-            <div class="alert alert-danger mb-4 rounded-0" style="border-radius: var(--radius);">
-                <div class="d-flex align-items-start gap-2 mb-2">
-                    <i class="bi bi-exclamation-triangle-fill mt-1"></i>
-                    <strong>Please fix the following issues and try again:</strong>
-                </div>
-                <ul class="mb-0 ps-3">
-                    @foreach ($errors->all() as $err)
-                        <li>{{ $err }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
+        @include('partials.alerts')
 
         {{-- Two-column layout: FORM (left) | LIVE PREVIEW (right) --}}
         <div class="row g-4 g-lg-5">
 
             {{-- ======================================================================
-                 LEFT COLUMN — The form (5 Bootstrap cards + Download button)
+                 LEFT COLUMN — The form (5 Bootstrap cards + action buttons)
                  ====================================================================== --}}
             <div class="col-lg-6">
 
-                {{-- Download PDF form — wraps all inputs so they all POST together. --}}
-                <form id="invoiceForm" action="{{ route('invoice.download') }}" method="POST" novalidate target="_blank">
-                    @csrf
+                {{-- Form action differs between create (POST invoices.store) + edit (PUT invoices.update) --}}
+                @if ($authed)
+                    <form id="invoiceForm"
+                          action="{{ $editing ? route('invoices.update', $invoice) : route('invoices.store') }}"
+                          method="POST"
+                          novalidate>
+                        @csrf
+                        @if ($editing)
+                            @method('PUT')
+                        @endif
+                @else
+                    {{-- Legacy guest-only PDF-only POST (no DB write). --}}
+                    <form id="invoiceForm"
+                          action="{{ route('invoice.download') }}"
+                          method="POST"
+                          novalidate
+                          target="_blank">
+                        @csrf
+                @endif
 
                     {{-- Hidden logo data URL (populated by JS on file select) --}}
-                    <input type="hidden" name="logo_data" id="logoData">
+                    <input type="hidden" name="logo_data" id="logoData" value="{{ $editing ? e($invoice->logo_data) : '' }}">
 
                     {{-- 1. Your business ------------------------------------------------ --}}
                     <div class="card mb-4" style="border-radius: var(--radius); border: none; box-shadow: var(--shadow-sm);">
@@ -109,42 +173,92 @@
                         </div>
                     </div>
 
-                    {{-- 2. Client ------------------------------------------------------- --}}
+                    {{-- 2. Client (authed: dropdown + quick-create link; guest: free-form) --}}
                     <div class="card mb-4" style="border-radius: var(--radius); border: none; box-shadow: var(--shadow-sm);">
                         <div class="card-body p-4">
                             <h2 class="mb-3" style="font-size: 1.125rem;">
                                 <i class="bi bi-person me-2" style="color: var(--ink);"></i>
                                 Client
                             </h2>
-                            <div class="row g-3">
-                                <div class="col-12">
-                                    <label for="client_name" class="form-label">Client name <span style="color: var(--overdue);">*</span></label>
-                                    <input type="text" id="client_name" name="client_name"
-                                           class="form-control form-control-lg"
-                                           placeholder="Ahmed Khan"
-                                           value="{{ $oldOr('client_name') }}" required>
+                            @if ($authed)
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label for="client_id" class="form-label">Client <span style="color: var(--overdue);">*</span></label>
+                                        <div class="d-flex align-items-end gap-2">
+                                            <select id="client_id" name="client_id"
+                                                    class="form-select form-select-lg flex-grow-1 @error('client_id') is-invalid @enderror"
+                                                    required>
+                                                <option value="">— Select a client —</option>
+                                                @foreach ($clients as $c)
+                                                    <option value="{{ $c->id }}"
+                                                        data-name="{{ $c->name }}"
+                                                        data-email="{{ $c->email ?? '' }}"
+                                                        @selected((string) $oldOr('client_id', '') === (string) $c->id)>
+                                                        {{ $c->name }}
+                                                        @if ($c->email)
+                                                            &lt;{{ $c->email }}&gt;
+                                                        @endif
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            <a href="{{ route('clients.create', ['return' => $clientReturnUrl]) }}"
+                                               class="btn btn-outline-ink btn-lg"
+                                               title="Add a new client">
+                                                <i class="bi bi-person-plus me-1"></i>
+                                                Add new client
+                                            </a>
+                                        </div>
+                                        @error('client_id')
+                                            <div class="invalid-feedback d-block">
+                                                <i class="bi bi-exclamation-circle me-1"></i> {{ $message }}
+                                            </div>
+                                        @enderror
+                                        <div class="form-text mt-2">
+                                            Don't see the right client?
+                                            <a href="{{ route('clients.create', ['return' => $clientReturnUrl]) }}" class="auth-link">Add them first</a>
+                                            and they'll appear here automatically.
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <label for="client_email" class="form-label">Email</label>
-                                    <input type="email" id="client_email" name="client_email"
-                                           class="form-control"
-                                           placeholder="client@email.com"
-                                           value="{{ $oldOr('client_email') }}">
+
+                                {{-- Hidden guest-style client fields: not needed for authed users because
+                                     client is a FK relation. Kept ONLY so PDF legacy download route also
+                                     works with the same blade for quick previews. --}}
+                                <input type="hidden" name="client_name" value="">
+                                <input type="hidden" name="client_email" value="">
+                                <input type="hidden" name="client_phone" value="">
+                                <input type="hidden" name="client_address" value="">
+                            @else
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label for="client_name" class="form-label">Client name <span style="color: var(--overdue);">*</span></label>
+                                        <input type="text" id="client_name" name="client_name"
+                                               class="form-control form-control-lg"
+                                               placeholder="Ahmed Khan"
+                                               value="{{ $oldOr('client_name') }}" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="client_email" class="form-label">Email</label>
+                                        <input type="email" id="client_email" name="client_email"
+                                               class="form-control"
+                                               placeholder="client@email.com"
+                                               value="{{ $oldOr('client_email') }}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="client_phone" class="form-label">Phone</label>
+                                        <input type="tel" id="client_phone" name="client_phone"
+                                               class="form-control"
+                                               placeholder="+1 (555) 000-0001"
+                                               value="{{ $oldOr('client_phone') }}">
+                                    </div>
+                                    <div class="col-12">
+                                        <label for="client_address" class="form-label">Address</label>
+                                        <textarea id="client_address" name="client_address" rows="2"
+                                                  class="form-control"
+                                                  placeholder="456 Client Ave, City, Country">{{ $oldOr('client_address') }}</textarea>
+                                    </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <label for="client_phone" class="form-label">Phone</label>
-                                    <input type="tel" id="client_phone" name="client_phone"
-                                           class="form-control"
-                                           placeholder="+1 (555) 000-0001"
-                                           value="{{ $oldOr('client_phone') }}">
-                                </div>
-                                <div class="col-12">
-                                    <label for="client_address" class="form-label">Address</label>
-                                    <textarea id="client_address" name="client_address" rows="2"
-                                              class="form-control"
-                                              placeholder="456 Client Ave, City, Country">{{ $oldOr('client_address') }}</textarea>
-                                </div>
-                            </div>
+                            @endif
                         </div>
                     </div>
 
@@ -159,8 +273,13 @@
                                 <div class="col-12 col-sm-6 col-md-4">
                                     <label for="invoice_number" class="form-label">Invoice number</label>
                                     <input type="text" id="invoice_number" name="invoice_number"
-                                           class="form-control"
+                                           class="form-control @error('invoice_number') is-invalid @enderror"
                                            value="{{ $oldOr('invoice_number', $defaults['invoice_number']) }}">
+                                    @error('invoice_number')
+                                        <div class="invalid-feedback d-block">
+                                            <i class="bi bi-exclamation-circle me-1"></i> {{ $message }}
+                                        </div>
+                                    @enderror
                                 </div>
                                 <div class="col-12 col-sm-6 col-md-4">
                                     <label for="invoice_date" class="form-label">Invoice date</label>
@@ -186,6 +305,16 @@
                                         @endforeach
                                     </select>
                                 </div>
+                                @if ($authed)
+                                    <div class="col-12 col-sm-6 col-md-4">
+                                        <label for="status" class="form-label">Status</label>
+                                        <select id="status" name="status" class="form-select">
+                                            <option value="draft"   @selected($oldOr('status', $defaults['status']) === 'draft')>Draft</option>
+                                            <option value="pending" @selected($oldOr('status', $defaults['status']) === 'pending')>Pending</option>
+                                            <option value="paid"    @selected($oldOr('status', $defaults['status']) === 'paid')>Paid</option>
+                                        </select>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -314,12 +443,39 @@
                         </div>
                     </div>
 
-                    {{-- Download PDF button -------------------------------------------- --}}
-                    <div class="text-start">
-                        <button type="submit" id="downloadBtn" class="btn btn-saffron btn-lg w-100 justify-content-center">
-                            <i class="bi bi-filetype-pdf"></i>
-                            Download PDF
-                        </button>
+                    {{-- Action buttons: Save + PDF (authed) or PDF only (guest) -------- --}}
+                    <div class="row g-3">
+                        @if ($authed)
+                            <div class="col-md-6">
+                                <button type="submit"
+                                        class="btn btn-saffron btn-lg w-100 justify-content-center">
+                                    <i class="bi bi-check2"></i>
+                                    {{ $editing ? 'Update invoice' : 'Save invoice' }}
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <button type="submit"
+                                        id="downloadBtn"
+                                        name="action"
+                                        value="pdf"
+                                        class="btn btn-ink btn-lg w-100 justify-content-center"
+                                        formtarget="_blank"
+                                        formaction="{{ $editing
+                                            ? route('invoices.update', ['invoice' => $invoice, 'action' => 'pdf'])
+                                            : route('invoices.store', ['action' => 'pdf']) }}"
+                                        formmethod="POST">
+                                    <i class="bi bi-filetype-pdf"></i>
+                                    Save &amp; Download PDF
+                                </button>
+                            </div>
+                        @else
+                            <div class="col-12">
+                                <button type="submit" id="downloadBtn" class="btn btn-saffron btn-lg w-100 justify-content-center">
+                                    <i class="bi bi-filetype-pdf"></i>
+                                    Download PDF
+                                </button>
+                            </div>
+                        @endif
                     </div>
                 </form>
             </div>

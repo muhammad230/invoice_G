@@ -2,159 +2,489 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Http\Requests\StoreInvoiceRequest;
+use App\Http\Requests\UpdateInvoiceRequest;
+use App\Models\Client;
+use App\Models\Invoice;
+use App\Models\InvoiceItem;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
-/**
- * InvoiceController handles the creation, live-preview, and PDF download
- * of invoices. No authentication or database required for this version.
- */
 class InvoiceController extends Controller
 {
-    /**
-     * Supported currencies with symbol + currency code mapping.
-     * Mirrored in the JS for live preview formatting.
-     */
-    protected $currencies = [
-        'USD' => ['symbol' => '$',  'name' => 'US Dollar'],
-        'PKR' => ['symbol' => 'Rs', 'name' => 'Pakistani Rupee'],
-        'EUR' => ['symbol' => '€',  'name' => 'Euro'],
-        'GBP' => ['symbol' => '£',  'name' => 'British Pound'],
-    ];
-
-    /**
-     * GET /invoice/create
-     * Show the blank Create Invoice form (left) + Live Preview (right).
-     * Defaults are set in the Blade view (or via old() input after validation).
-     */
-    public function create(Request $request)
+    public function __construct()
     {
-        $currencies = $this->currencies;
-
-        // Defaults for the initial form render.
-        $defaults = [
-            'invoice_number' => 'INV-001',
-            'invoice_date'   => today()->format('Y-m-d'),
-            'due_date'       => today()->addDays(30)->format('Y-m-d'),
-            'currency'       => 'USD',
-            'tax'            => '0',
-            'discount'       => '0',
-        ];
-
-        return view('invoice.create', compact('currencies', 'defaults'));
+        // Auth required for all actions except the legacy download route
+        // (which still validates the request body — kept for backward compat
+        // with the unauthenticated demo form).
+        $this->middleware('auth')->except(['downloadLegacy']);
     }
 
     /**
-     * POST /invoice/download
-     * Validate, recalculate totals (server side — never trust client JS),
-     * render the PDF and return it as a download.
+     * Currency metadata (symbol + display name).
      */
-    public function download(Request $request)
+    protected function currencies(): array
     {
-        // ---- Validation ---------------------------------------------------
+        return Invoice::currencies();
+    }
+
+    /**
+     * Take a validated form body, recalculate all monetary totals in cents,
+     * and return a structured array with both raw cents (for DB) and the
+     * item rows prepared for DB insert.
+     */
+    protected function recalcTotals(array $validated): array
+    {
+        $taxPct   = (float) ($validated['tax']      ?? 0);
+        $discount = (float) ($validated['discount'] ?? 0);
+
+        $subtotalCents = 0;
+        $itemRows = [];
+
+        foreach ($validated['items'] as $row) {
+            $qty          = (int)   $row['quantity'];
+            $priceCents   = (int)   round(((float) $row['price']) * 100);
+            $lineCents    = $qty * $priceCents;
+
+            $itemRows[] = [
+                'description' => $row['description'],
+                'quantity'    => $qty,
+                'price'       => $priceCents,
+                'total'       => $lineCents,
+            ];
+
+            $subtotalCents += $lineCents;
+        }
+
+        $taxCents          = (int) round(($subtotalCents * $taxPct) / 100);
+        $totalBeforeDisc   = $subtotalCents + $taxCents;
+        $discountCents     = (int) round($discount * 100);
+        $totalCents        = max(0, $totalBeforeDisc - $discountCents);
+
+        return [
+            'subtotal'      => $subtotalCents,
+            'tax_percent'   => round($taxPct, 2),
+            'tax_amount'    => $taxCents,
+            'discount'      => $discountCents,
+            'total'         => $totalCents,
+            'items'         => $itemRows,
+        ];
+    }
+
+    // ------------------------------------------------------------------
+    // CRUD (Authenticated)
+    // ------------------------------------------------------------------
+
+    /**
+     * GET /invoices — list, search, filter, paginate.
+     */
+    public function index(Request $request): View
+    {
+        $user = auth()->user();
+
+        $query = Invoice::where('user_id', $user->id)
+            ->with(['client', 'items']);
+
+        // Search by invoice number OR client name.
+        $q = trim((string) $request->input('q', ''));
+        if ($q !== '') {
+            $query->where(function ($subq) use ($q) {
+                $subq->where('invoice_number', 'like', '%' . $q . '%')
+                     ->orWhereHas('client', fn ($c) => $c->where('name', 'like', '%' . $q . '%'));
+            });
+        }
+
+        // Filter by status. "overdue" is synthetic (pending + due_date < today).
+        $status = (string) $request->input('status', '');
+        if (in_array($status, ['draft', 'pending', 'paid'], true)) {
+            $query->where('status', $status);
+        } elseif ($status === 'overdue') {
+            $query->overdue();
+        }
+
+        $query->orderByDesc('invoice_date')->orderByDesc('id');
+
+        $invoices = $query->paginate(10)->withQueryString();
+
+        return view('invoices.index', [
+            'invoices'    => $invoices,
+            'filters'     => [
+                'q'      => $q,
+                'status' => $status,
+            ],
+        ]);
+    }
+
+    /**
+     * GET /invoices/create — invoice builder (w/ client dropdown).
+     */
+    public function create(): View
+    {
+        $user = auth()->user();
+
+        $currencies = $this->currencies();
+        $clients    = Client::where('user_id', $user->id)->orderBy('name')->get(['id', 'name', 'email']);
+
+        $defaults = [
+            'invoice_number' => $user->nextInvoiceNumber(),
+            'invoice_date'   => Date::today()->format('Y-m-d'),
+            'due_date'       => Date::today()->addDays(30)->format('Y-m-d'),
+            'currency'       => 'USD',
+            'tax'            => '0',
+            'discount'       => '0',
+            'status'         => Invoice::STATUS_PENDING,
+        ];
+
+        $invoice = null;
+        $oldItems = [];
+
+        return view('invoice.create', compact(
+            'currencies',
+            'clients',
+            'defaults',
+            'invoice',
+            'oldItems'
+        ));
+    }
+
+    /**
+     * POST /invoices — validate, recalc, persist in transaction, redirect.
+     */
+    public function store(StoreInvoiceRequest $request): RedirectResponse
+    {
+        $validated = $request->validated();
+        $totals    = $this->recalcTotals($validated);
+        $user      = auth()->user();
+
+        DB::beginTransaction();
+        try {
+            /** @var Invoice $invoice */
+            $invoice = Invoice::create([
+                'user_id'         => $user->id,
+                'client_id'       => (int) $validated['client_id'],
+                'invoice_number'  => $validated['invoice_number'],
+                'invoice_date'    => $validated['invoice_date'],
+                'due_date'        => $validated['due_date'] ?? null,
+                'currency'        => $validated['currency'],
+                'status'          => $validated['status'] ?? Invoice::STATUS_PENDING,
+                'subtotal'        => $totals['subtotal'],
+                'tax_percent'     => $totals['tax_percent'],
+                'tax_amount'      => $totals['tax_amount'],
+                'discount'        => $totals['discount'],
+                'total'           => $totals['total'],
+                'business_name'    => $validated['business_name']    ?? null,
+                'business_email'   => $validated['business_email']   ?? null,
+                'business_phone'   => $validated['business_phone']   ?? null,
+                'business_address' => $validated['business_address'] ?? null,
+                'logo_data'        => isset($validated['logo_data']) && $validated['logo_data'] !== ''
+                    ? $validated['logo_data']
+                    : null,
+                'notes'           => $validated['notes'] ?? null,
+            ]);
+
+            $itemRows = [];
+            $now      = Date::now();
+            foreach ($totals['items'] as $row) {
+                $itemRows[] = [
+                    'invoice_id'  => $invoice->id,
+                    'description' => $row['description'],
+                    'quantity'    => $row['quantity'],
+                    'price'       => $row['price'],
+                    'total'       => $row['total'],
+                    'created_at'  => $now,
+                    'updated_at'  => $now,
+                ];
+            }
+
+            DB::table('invoice_items')->insert($itemRows);
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        }
+
+        session()->flash('success', "Invoice <strong>{$invoice->invoice_number}</strong> saved.");
+
+        if ((string) $request->query('action', '') === 'pdf' || (string) $request->input('action', '') === 'pdf') {
+            return $this->download($invoice);
+        }
+
+        return redirect()->route('invoices.show', $invoice);
+    }
+
+    /**
+     * GET /invoices/{invoice} — full invoice view + action buttons.
+     */
+    public function show(Invoice $invoice): View
+    {
+        $this->authorize('view', $invoice);
+        $invoice->load(['client', 'items']);
+
+        return view('invoices.show', compact('invoice'));
+    }
+
+    /**
+     * GET /invoices/{invoice}/edit — builder pre-filled.
+     */
+    public function edit(Invoice $invoice): View
+    {
+        $this->authorize('update', $invoice);
+        $invoice->load(['client', 'items']);
+
+        $user = auth()->user();
+        $currencies = $this->currencies();
+        $clients    = Client::where('user_id', $user->id)->orderBy('name')->get(['id', 'name', 'email']);
+
+        $defaults = [
+            'invoice_number' => $invoice->invoice_number,
+            'invoice_date'   => $invoice->invoice_date->format('Y-m-d'),
+            'due_date'       => optional($invoice->due_date)->format('Y-m-d'),
+            'currency'       => $invoice->currency,
+            'tax'            => (string) $invoice->tax_percent,
+            'discount'       => number_format($invoice->discount / 100, 2, '.', ''),
+            'status'         => $invoice->status,
+        ];
+
+        $oldItems = $invoice->items->map(function (InvoiceItem $i) {
+            return [
+                'description' => $i->description,
+                'quantity'    => $i->quantity,
+                'price'       => number_format($i->price / 100, 2, '.', ''),
+            ];
+        })->all();
+
+        return view('invoice.create', compact(
+            'currencies',
+            'clients',
+            'defaults',
+            'invoice',
+            'oldItems'
+        ));
+    }
+
+    /**
+     * PUT /invoices/{invoice} — update + replace items.
+     */
+    public function update(UpdateInvoiceRequest $request, Invoice $invoice): RedirectResponse
+    {
+        $this->authorize('update', $invoice);
+
+        $validated = $request->validated();
+        $totals    = $this->recalcTotals($validated);
+
+        DB::beginTransaction();
+        try {
+            $invoice->update([
+                'client_id'       => (int) $validated['client_id'],
+                'invoice_number'  => $validated['invoice_number'],
+                'invoice_date'    => $validated['invoice_date'],
+                'due_date'        => $validated['due_date'] ?? null,
+                'currency'        => $validated['currency'],
+                'status'          => $validated['status'] ?? $invoice->status,
+                'subtotal'        => $totals['subtotal'],
+                'tax_percent'     => $totals['tax_percent'],
+                'tax_amount'      => $totals['tax_amount'],
+                'discount'        => $totals['discount'],
+                'total'           => $totals['total'],
+                'business_name'    => $validated['business_name']    ?? null,
+                'business_email'   => $validated['business_email']   ?? null,
+                'business_phone'   => $validated['business_phone']   ?? null,
+                'business_address' => $validated['business_address'] ?? null,
+                'logo_data'        => isset($validated['logo_data']) && $validated['logo_data'] !== ''
+                    ? $validated['logo_data']
+                    : null,
+                'notes'           => $validated['notes'] ?? null,
+            ]);
+
+            $invoice->items()->delete();
+
+            $itemRows = [];
+            $now      = Date::now();
+            foreach ($totals['items'] as $row) {
+                $itemRows[] = [
+                    'invoice_id'  => $invoice->id,
+                    'description' => $row['description'],
+                    'quantity'    => $row['quantity'],
+                    'price'       => $row['price'],
+                    'total'       => $row['total'],
+                    'created_at'  => $now,
+                    'updated_at'  => $now,
+                ];
+            }
+            DB::table('invoice_items')->insert($itemRows);
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        }
+
+        session()->flash('success', "Invoice <strong>{$invoice->invoice_number}</strong> updated.");
+
+        if ((string) $request->query('action', '') === 'pdf' || (string) $request->input('action', '') === 'pdf') {
+            return $this->download($invoice);
+        }
+
+        return redirect()->route('invoices.show', $invoice);
+    }
+
+    /**
+     * DELETE /invoices/{invoice}
+     */
+    public function destroy(Invoice $invoice): RedirectResponse
+    {
+        $this->authorize('delete', $invoice);
+
+        $number = $invoice->invoice_number;
+        $invoice->delete();
+
+        session()->flash('success', "Invoice <strong>{$number}</strong> deleted.");
+
+        return redirect()->route('invoices.index');
+    }
+
+    /**
+     * POST /invoices/{invoice}/mark-paid — flip status to paid.
+     */
+    public function markPaid(Invoice $invoice): RedirectResponse
+    {
+        $this->authorize('update', $invoice);
+
+        $invoice->update(['status' => Invoice::STATUS_PAID]);
+
+        session()->flash('success', "Invoice <strong>{$invoice->invoice_number}</strong> marked as paid.");
+
+        return redirect()->route('invoices.show', $invoice);
+    }
+
+    // ------------------------------------------------------------------
+    // PDF download / streaming (DB + legacy)
+    // ------------------------------------------------------------------
+
+    /**
+     * GET  /invoices/{invoice}/download — stream PDF from a persisted invoice.
+     */
+    public function download(Invoice $invoice): StreamedResponse
+    {
+        $this->authorize('view', $invoice);
+        $invoice->load(['client', 'items']);
+
+        $currencyInfo = Invoice::currencies()[$invoice->currency]
+            ?? Invoice::currencies()['USD'];
+
+        $itemsForView = $invoice->items->map(function (InvoiceItem $item) {
+            return [
+                'description' => $item->description,
+                'quantity'    => $item->quantity,
+                'price'       => $item->price / 100,
+                'line_total'  => $item->total / 100,
+            ];
+        })->all();
+
+        $totals = [
+            'subtotal' => $invoice->subtotal / 100,
+            'tax'      => $invoice->tax_amount / 100,
+            'tax_pct'  => (float) $invoice->tax_percent,
+            'discount' => $invoice->discount / 100,
+            'total'    => $invoice->total / 100,
+        ];
+
+        $viewData = [
+            'business_name'    => $invoice->business_name,
+            'business_email'   => $invoice->business_email,
+            'business_phone'   => $invoice->business_phone,
+            'business_address' => $invoice->business_address,
+            'client_name'      => optional($invoice->client)->name ?? '—',
+            'client_email'     => optional($invoice->client)->email,
+            'client_phone'     => optional($invoice->client)->phone,
+            'client_address'   => optional($invoice->client)->address,
+            'invoice_number'   => $invoice->invoice_number,
+            'invoice_date'     => $invoice->invoice_date->format('M j, Y'),
+            'due_date'         => optional($invoice->due_date)?->format('M j, Y'),
+            'currency'         => $invoice->currency,
+            'currency_symbol'  => $currencyInfo['symbol'],
+            'items'            => $itemsForView,
+            'totals'           => $totals,
+            'notes'            => $invoice->notes,
+            'logo_data'        => $invoice->logo_data,
+        ];
+
+        $pdf = Pdf::loadView('invoice.pdf', $viewData)->setPaper('a4', 'portrait');
+
+        $safeNumber = preg_replace('/[^\w\-]/', '-', $invoice->invoice_number) ?: 'invoice';
+
+        return $pdf->stream("invoice-{$safeNumber}.pdf");
+    }
+
+    /**
+     * POST /invoice/download — legacy unauthenticated PDF route.
+     * Kept as `downloadLegacy` so it can still be reached from the
+     * "Get started free" demo invoice builder on the home page.
+     */
+    public function downloadLegacy(Request $request): StreamedResponse
+    {
         $validated = $request->validate([
-            // Your business
             'business_name'    => 'required|string|max:255',
             'business_email'   => 'nullable|email|max:255',
             'business_phone'   => 'nullable|string|max:50',
             'business_address' => 'nullable|string|max:500',
-
-            // Client
             'client_name'      => 'required|string|max:255',
             'client_email'     => 'nullable|email|max:255',
             'client_phone'     => 'nullable|string|max:50',
             'client_address'   => 'nullable|string|max:500',
-
-            // Invoice details
             'invoice_number'   => 'required|string|max:50',
             'invoice_date'     => 'required|date',
             'due_date'         => 'nullable|date|after_or_equal:invoice_date',
             'currency'         => 'required|string|in:USD,PKR,EUR,GBP',
-
-            // Items (arrays — at least one, each item validated)
             'items'            => 'required|array|min:1',
             'items.*.description' => 'required|string|max:255',
             'items.*.quantity'    => 'required|integer|min:1',
             'items.*.price'       => 'required|numeric|min:0',
-
-            // Totals / extras
             'tax'      => 'nullable|numeric|min:0|max:100',
             'discount' => 'nullable|numeric|min:0',
             'notes'    => 'nullable|string|max:1000',
-
-            // Logo (base64 data URL, optional — embedded in the form via FileReader)
             'logo_data' => 'nullable|string',
         ]);
 
-        // ---- Sanitize numeric fields (treat nulls as 0) ------------------
-        $taxPct   = (float) ($validated['tax']      ?? 0);
-        $discount = (float) ($validated['discount'] ?? 0);
+        $totals = $this->recalcTotals($validated);
+        $currencyInfo = Invoice::currencies()[$validated['currency']]
+            ?? Invoice::currencies()['USD'];
 
-        // ---- Recalculate totals on the server (in cents to avoid floats) -
-        $subtotalCents = 0;
-        $items = [];
-
-        foreach ($validated['items'] as $row) {
-            $qty   = (int)    $row['quantity'];
-            $price = (float)  $row['price'];
-
-            // price * 100 then round to avoid float drift.
-            $priceCents    = (int) round($price * 100);
-            $lineTotalCents = $qty * $priceCents;
-
-            $items[] = [
+        $itemsForView = [];
+        foreach ($totals['items'] as $row) {
+            $itemsForView[] = [
                 'description' => $row['description'],
-                'quantity'    => $qty,
-                'price'       => $price,               // original, for display
-                'line_total'  => $lineTotalCents / 100, // decimal, for display
+                'quantity'    => $row['quantity'],
+                'price'       => $row['price'] / 100,
+                'line_total'  => $row['total'] / 100,
             ];
-
-            $subtotalCents += $lineTotalCents;
         }
 
-        // Tax = subtotal * taxPct / 100
-        $taxCents = (int) round(($subtotalCents * $taxPct) / 100);
-        $totalBeforeDiscount = $subtotalCents + $taxCents;
-
-        // Discount is a fixed amount — convert to cents then clamp.
-        $discountCents = (int) round($discount * 100);
-        $totalCents = max(0, $totalBeforeDiscount - $discountCents);
-
-        // Collect totals as display-ready decimals.
-        $totals = [
-            'subtotal' => $subtotalCents / 100,
-            'tax'      => $taxCents      / 100,
-            'tax_pct'  => $taxPct,
-            'discount' => $discountCents / 100,
-            'total'    => $totalCents    / 100,
-        ];
-
-        // ---- Currency symbol for display ---------------------------------
-        $currency = $validated['currency'];
-        $currencyInfo = $this->currencies[$currency] ?? $this->currencies['USD'];
-        $currencySymbol = $currencyInfo['symbol'];
-
-        // ---- Logo: if a data URL was uploaded, pass it through (escaped by Blade).
-        $logoData = $validated['logo_data'] ?? null;
-
-        // ---- Build view data ---------------------------------------------
         $viewData = array_merge($validated, [
-            'items'           => $items,
-            'totals'          => $totals,
-            'currency'        => $currency,
-            'currency_symbol' => $currencySymbol,
-            'logo_data'       => $logoData,
+            'invoice_date'    => date('M j, Y', strtotime($validated['invoice_date'])),
+            'due_date'        => $validated['due_date']
+                ? date('M j, Y', strtotime($validated['due_date']))
+                : null,
+            'currency_symbol' => $currencyInfo['symbol'],
+            'items'           => $itemsForView,
+            'totals'          => [
+                'subtotal' => $totals['subtotal'] / 100,
+                'tax'      => $totals['tax_amount'] / 100,
+                'tax_pct'  => (float) $totals['tax_percent'],
+                'discount' => $totals['discount'] / 100,
+                'total'    => $totals['total'] / 100,
+            ],
+            'logo_data' => $validated['logo_data'] ?? null,
         ]);
 
-        // ---- Render & stream PDF (opens inline in the browser) -----------
-        // We use DomPDF with DejaVu Sans so currency symbols render correctly.
-        $pdf = Pdf::loadView('invoice.pdf', $viewData)
-            ->setPaper('a4', 'portrait');
+        $pdf = Pdf::loadView('invoice.pdf', $viewData)->setPaper('a4', 'portrait');
 
-        // Safe filename — strip characters that are illegal in Windows filenames.
         $safeNumber = preg_replace('/[^\w\-]/', '-', $validated['invoice_number']) ?: 'invoice';
-        $filename   = 'invoice-' . $safeNumber . '.pdf';
 
-        return $pdf->stream($filename);
+        return $pdf->stream("invoice-{$safeNumber}.pdf");
     }
 }
