@@ -1,54 +1,36 @@
 @extends('layouts.app')
 
-@section('title', 'Login — InvoiceFlow')
+@section('title', 'Set a new password — InvoiceFlow')
 
 @section('content')
 <!-- ==========================================================
-     Login — InvoiceFlow
-     Guest-only auth page with our paper/ink style and field-
-     level Bootstrap invalid-feedback for every error.
+     Password Reset — InvoiceFlow
+     Step 2: choose a new password using the reset token from email.
      ========================================================== -->
 <section class="auth-section py-5 py-lg-6">
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-md-8 col-lg-6 col-xl-5">
 
-                <!-- Auth header / logo ------------------------------------- -->
                 <div class="text-center mb-4 mb-lg-5">
                     <a href="{{ route('home') }}" class="auth-brand mb-3" aria-label="InvoiceFlow">
                         <span class="logo-icon" aria-hidden="true" style="width: 52px; height: 52px; font-size: 1.5rem;">
                             <i class="bi bi-check2"></i>
                         </span>
                     </a>
-                    <h1 class="auth-title mb-2">Welcome back</h1>
+                    <h1 class="auth-title mb-2">Set a new password</h1>
                     <p class="auth-subtitle mb-0">
-                        Sign in to view invoices, track payments, and send new estimates.
+                        Pick a strong password and you'll be back on track.
                     </p>
                 </div>
 
-                <!-- Card / form -------------------------------------------- -->
                 <div class="card auth-card shadow-sm">
                     <div class="card-body p-4 p-lg-5">
-                        <!-- Top status banner (password reset link sent, etc.) -->
-                        @if (session('status'))
-                            <div class="alert alert-success mb-4" role="alert">
-                                <i class="bi bi-check-circle me-1"></i>
-                                {{ session('status') }}
-                            </div>
-                        @endif
-
-                        <!-- Top banner for general login errors (not per-field) -->
-                        @error('login')
-                            <div class="alert alert-danger mb-4" role="alert">
-                                <i class="bi bi-exclamation-triangle me-1"></i>
-                                {{ $message }}
-                            </div>
-                        @enderror
-
-                        <form method="POST" action="{{ route('login') }}" novalidate>
+                        <form method="POST" action="{{ route('password.update') }}" novalidate>
                             @csrf
+                            <input type="hidden" name="token" value="{{ $token }}">
 
-                            <!-- Email -->
+                            <!-- Email (pre-filled from reset link) -->
                             <div class="mb-3">
                                 <label for="email" class="form-label">
                                     Email <span class="text-danger">*</span>
@@ -60,9 +42,8 @@
                                     <input id="email"
                                            type="email"
                                            name="email"
-                                           value="{{ old('email') }}"
+                                           value="{{ $email ?? old('email') }}"
                                            class="form-control form-control-lg @error('email') is-invalid @enderror"
-                                           placeholder="you@freelance.com"
                                            required
                                            autocomplete="email"
                                            autofocus>
@@ -75,18 +56,11 @@
                                 @enderror
                             </div>
 
-                            <!-- Password -->
+                            <!-- New password -->
                             <div class="mb-3">
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <label for="password" class="form-label mb-0">
-                                        Password <span class="text-danger">*</span>
-                                    </label>
-                                    @if (Route::has('password.request'))
-                                        <a href="{{ route('password.request') }}" class="auth-forgot-link text-sm">
-                                            Forgot password?
-                                        </a>
-                                    @endif
-                                </div>
+                                <label for="password" class="form-label">
+                                    New password <span class="text-danger">*</span>
+                                </label>
                                 <div class="input-group input-group-lg">
                                     <span class="input-group-text" aria-hidden="true">
                                         <i class="bi bi-lock"></i>
@@ -95,9 +69,9 @@
                                            type="password"
                                            name="password"
                                            class="form-control form-control-lg @error('password') is-invalid @enderror"
-                                           placeholder="••••••••"
+                                           placeholder="Minimum 8 characters"
                                            required
-                                           autocomplete="current-password">
+                                           autocomplete="new-password">
                                 </div>
                                 @error('password')
                                     <div class="invalid-feedback d-block">
@@ -107,42 +81,40 @@
                                 @enderror
                             </div>
 
-                            <!-- Remember me -->
+                            <!-- Confirm -->
                             <div class="mb-4">
-                                <div class="form-check">
-                                    <input class="form-check-input"
-                                           type="checkbox"
-                                           name="remember"
-                                           id="remember"
-                                           {{ old('remember') ? 'checked' : '' }}>
-                                    <label class="form-check-label" for="remember">
-                                        Remember me
-                                    </label>
+                                <label for="password-confirm" class="form-label">
+                                    Confirm password <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text" aria-hidden="true">
+                                        <i class="bi bi-shield-check"></i>
+                                    </span>
+                                    <input id="password-confirm"
+                                           type="password"
+                                           name="password_confirmation"
+                                           class="form-control form-control-lg"
+                                           placeholder="Repeat the password"
+                                           required
+                                           autocomplete="new-password">
                                 </div>
                             </div>
 
-                            <!-- Submit -->
                             <div class="d-grid gap-2 mb-4">
                                 <button type="submit" class="btn btn-saffron btn-lg">
-                                    <i class="bi bi-box-arrow-in-right me-1"></i>
-                                    Sign in
+                                    <i class="bi bi-unlock me-1"></i>
+                                    Reset password
                                 </button>
                             </div>
 
-                            <!-- Register link -->
                             <p class="text-center ink-soft mb-0">
-                                Don't have an account?
-                                <a href="{{ route('register') }}" class="auth-link">
-                                    Create a free account
-                                </a>
+                                Done?
+                                <a href="{{ route('login') }}" class="auth-link">Sign in</a>
                             </p>
                         </form>
                     </div>
                 </div>
 
-                <p class="text-center ink-soft mt-4" style="font-size: 0.875rem;">
-                    Protected by HTTPS. No credit card required to start.
-                </p>
             </div>
         </div>
     </div>

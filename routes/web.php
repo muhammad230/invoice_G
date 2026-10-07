@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -19,20 +20,26 @@ Route::get('/', function () {
     return view('home');
 })->name('home');
 
-// Login placeholder
-Route::get('/login', function () {
-    return view('auth.login');
-})->name('login');
-
-// Register placeholder
-Route::get('/register', function () {
-    return view('auth.register');
-})->name('register');
+/*
+|--------------------------------------------------------------------------
+| Invoice feature (no auth in this version — any visitor can create PDFs)
+|--------------------------------------------------------------------------
+*/
+Route::get('/invoice/create',  [InvoiceController::class, 'create'])  ->name('invoice.create');
+Route::post('/invoice/download', [InvoiceController::class, 'download'])->name('invoice.download');
 
 /*
 |--------------------------------------------------------------------------
-| Invoice feature (no auth / no DB in this version)
+| Authentication (laravel/ui bootstrap) — Login / Register / Password reset
 |--------------------------------------------------------------------------
 */
-Route::get('/invoice/create', [InvoiceController::class, 'create'])->name('invoice.create');
-Route::post('/invoice/download', [InvoiceController::class, 'download'])->name('invoice.download');
+Auth::routes();
+
+/*
+|--------------------------------------------------------------------------
+| Dashboard — protected, only for authenticated users
+|--------------------------------------------------------------------------
+*/
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware('auth')
+    ->name('dashboard');
