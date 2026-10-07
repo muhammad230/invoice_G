@@ -23,7 +23,7 @@
                     Create an invoice in minutes, send it in one click, and see exactly who has paid.
                 </p>
                 <div class="hero-cta">
-                    <a href="{{ route('register') }}" class="btn btn-saffron">
+                    <a href="{{ route('invoice.create') }}" class="btn btn-saffron">
                         Create invoice
                         <i class="bi bi-arrow-right"></i>
                     </a>
@@ -379,7 +379,7 @@
         <div class="cta-section">
             <h2>Send your first invoice today</h2>
             <p>Join thousands of freelancers and small businesses already getting paid faster with InvoiceFlow.</p>
-            <a href="{{ route('register') }}" class="btn btn-saffron btn-lg">
+            <a href="{{ route('invoice.create') }}" class="btn btn-saffron btn-lg">
                 Get started free
                 <i class="bi bi-arrow-right"></i>
             </a>

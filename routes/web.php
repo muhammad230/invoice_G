@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\InvoiceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,3 +28,11 @@ Route::get('/login', function () {
 Route::get('/register', function () {
     return view('auth.register');
 })->name('register');
+
+/*
+|--------------------------------------------------------------------------
+| Invoice feature (no auth / no DB in this version)
+|--------------------------------------------------------------------------
+*/
+Route::get('/invoice/create', [InvoiceController::class, 'create'])->name('invoice.create');
+Route::post('/invoice/download', [InvoiceController::class, 'download'])->name('invoice.download');
