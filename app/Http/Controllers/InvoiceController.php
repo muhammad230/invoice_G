@@ -146,7 +146,7 @@ class InvoiceController extends Controller
             'logo_data'       => $logoData,
         ]);
 
-        // ---- Render & download PDF ---------------------------------------
+        // ---- Render & stream PDF (opens inline in the browser) -----------
         // We use DomPDF with DejaVu Sans so currency symbols render correctly.
         $pdf = Pdf::loadView('invoice.pdf', $viewData)
             ->setPaper('a4', 'portrait');
@@ -155,6 +155,6 @@ class InvoiceController extends Controller
         $safeNumber = preg_replace('/[^\w\-]/', '-', $validated['invoice_number']) ?: 'invoice';
         $filename   = 'invoice-' . $safeNumber . '.pdf';
 
-        return $pdf->download($filename);
+        return $pdf->stream($filename);
     }
 }

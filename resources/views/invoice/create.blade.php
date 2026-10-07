@@ -56,7 +56,7 @@
             <div class="col-lg-6">
 
                 {{-- Download PDF form — wraps all inputs so they all POST together. --}}
-                <form id="invoiceForm" action="{{ route('invoice.download') }}" method="POST" novalidate>
+                <form id="invoiceForm" action="{{ route('invoice.download') }}" method="POST" novalidate target="_blank">
                     @csrf
 
                     {{-- Hidden logo data URL (populated by JS on file select) --}}
