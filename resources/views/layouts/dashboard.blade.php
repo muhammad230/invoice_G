@@ -100,9 +100,10 @@
         {{-- =====================================================================
              TOP BAR
              - Hamburger (opens offcanvas on <992px)
+             - Brand logo (mobile/tablet only — desktop shows it in the sidebar)
              - Search form (GET /invoices with q)
-             - Notification bell
-             - User avatar + name/role + dropdown (Profile, Logout)
+             - Far right end (always last): notification bell → demo user
+               avatar + name/role + dropdown (Profile, Logout)
              ===================================================================== --}}
         <header class="app-topbar">
             <div class="container-fluid">
@@ -118,7 +119,7 @@
                         <i class="bi bi-list fs-4"></i>
                     </button>
 
-                    {{-- Title (mobile only) --}}
+                    {{-- Brand logo (mobile/tablet only — desktop shows it in the sidebar) --}}
                     <a href="{{ route('dashboard') }}"
                        class="d-inline-flex d-lg-none align-items-center gap-2 text-decoration-none">
                         <span class="sidebar-brand__icon sidebar-brand__icon--sm" aria-hidden="true">

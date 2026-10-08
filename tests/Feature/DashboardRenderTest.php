@@ -38,6 +38,21 @@ class DashboardRenderTest extends TestCase
         // Chart JSON data attributes must be valid JSON (no raw quotes breaking out).
         $this->assertSame(1, preg_match('/data-labels=\'(\[.*?\])\'/s', $html, $m));
         $this->assertNotNull(json_decode($m[1], true));
+
+        // Topbar order: burger → logo → search → … → bell → demo-user menu,
+        // with the account always pinned as the last (far right) item.
+        $logoPos   = strpos($html, 'sidebar-brand__icon--sm');
+        $searchPos = strpos($html, 'app-topbar__search');
+        $bellPos   = strpos($html, 'app-topbar__iconbtn');
+        $avatarPos = strpos($html, 'app-topbar__avatarbtn');
+        $this->assertNotFalse($logoPos);
+        $this->assertNotFalse($searchPos);
+        $this->assertNotFalse($bellPos);
+        $this->assertNotFalse($avatarPos);
+        $this->assertTrue($logoPos < $searchPos, 'logo must come before the search box');
+        $this->assertTrue($searchPos < $bellPos, 'bell must come after the search box');
+        $this->assertTrue($bellPos < $avatarPos, 'demo-user menu must be the last item');
+        $this->assertSame(1, substr_count($html, 'sidebar-brand__icon--sm'), 'exactly one topbar logo');
     }
 
     public function test_dashboard_renders_empty_state_for_new_user(): void
