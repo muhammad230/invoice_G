@@ -138,6 +138,26 @@ textarea:focus-visible {
     border: 2px solid transparent;
 }
 
+/* The base .btn rule above re-declares padding/border literally, which
+   overrides Bootstrap's --bs-btn-* variable sizing (loaded earlier), so
+   .btn-sm / .btn-lg would otherwise have no effect. Re-state them here. */
+.btn.btn-sm {
+    padding: 0.4rem 0.9rem;
+    font-size: 0.85rem;
+    border-radius: 9px;
+    border-width: 1.5px;
+}
+
+.btn.btn-lg {
+    padding: 0.9rem 1.75rem;
+    font-size: 1.05rem;
+    border-width: 2px;
+}
+
+.btn-link {
+    border: 0;
+}
+
 .btn-saffron {
     background-color: var(--saffron);
     color: var(--white);
@@ -1268,12 +1288,15 @@ body.app-shell {
     margin: 0;
 }
 
+/* White "x" on the dark offcanvas — do NOT apply Bootstrap's
+   invert filter here: it is meant for Bootstrap's black icon, and
+   combined with our white fill it would render the x nearly invisible. */
 .app-offcanvas__close {
     color: #FFFFFF !important;
-    filter: invert(1) grayscale(100%) brightness(200%);
     opacity: 0.8;
     background: transparent url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23ffffff'%3e%3cpath d='M.293.293a1 1 0 011.414 0L8 6.586 14.293.293a1 1 0 111.414 1.414L9.414 8l6.293 6.293a1 1 0 01-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 01-1.414-1.414L6.586 8 .293 1.707a1 1 0 010-1.414z'/%3e%3c/svg%3e") center/1em auto no-repeat;
     border: none;
+    filter: none;
 }
 
 .app-offcanvas__close:hover {
@@ -1325,6 +1348,7 @@ body.app-shell {
 .app-topbar__search {
     max-width: 460px;
     margin-left: 8px;
+    min-width: 0; /* allow the search box to shrink instead of overflowing */
 }
 
 .app-topbar__search .input-group-search .input-group-text {
@@ -1347,6 +1371,7 @@ body.app-shell {
     height: auto;
     color: var(--ink);
     font-size: 0.9rem;
+    min-width: 0; /* input's intrinsic (size=20) width would otherwise overflow */
 }
 
 .app-topbar__search .form-control:focus {
@@ -1680,7 +1705,6 @@ body.app-shell {
 .chart-range-total {
     font-size: 0.75rem;
     color: var(--ink-soft);
-    margin-left: 8px;
     font-weight: 500;
     align-self: center;
 }
@@ -1999,6 +2023,17 @@ body.app-shell {
     .panel-card .card-header { padding: 12px 14px; }
     .panel-card .card-body { padding: 14px; }
     .dash-date-card { padding: 9px 12px; }
+
+    /* Topbar: burger + brand + avatar no longer fit beside the search box
+       on phones — move the search onto its own full-width row. */
+    .app-topbar > .container-fluid { height: auto; padding-top: 8px; padding-bottom: 8px; }
+    .app-topbar > .container-fluid > .d-flex { flex-wrap: wrap; }
+    .app-topbar__search {
+        order: 5;
+        flex: 1 0 100%;
+        max-width: none;
+        margin-left: 0;
+    }
 }
 
 @media (max-width: 575.98px) {

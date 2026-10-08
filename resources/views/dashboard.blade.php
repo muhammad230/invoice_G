@@ -8,22 +8,23 @@
     $money = function (int $cents) use ($symbol): string {
         return $symbol . number_format($cents / 100, 2);
     };
-    $moneyFloat = function (float $dollars) use ($symbol): string {
-        return $symbol . number_format($dollars, 2);
-    };
 
     $deltaBadge = function (array $delta): string {
         if ($delta['direction'] === 'new') {
             return '<span class="dash-stat__delta dash-stat__delta--new"><i class="bi bi-sparkles"></i> New</span>';
         }
-        if ($delta['direction'] === 'flat' || $delta['pct'] === null) {
+        if ($delta['pct'] === null) {
             return '<span class="dash-stat__delta dash-stat__delta--flat"><i class="bi bi-dash"></i> No data</span>';
         }
+        $pct = abs($delta['pct']);
         if ($delta['direction'] === 'up') {
-            return '<span class="dash-stat__delta dash-stat__delta--up"><i class="bi bi-arrow-up-short"></i> ' . abs($delta['pct']) . '% <small>vs prev 30d</small></span>';
+            return '<span class="dash-stat__delta dash-stat__delta--up"><i class="bi bi-arrow-up-short"></i> ' . $pct . '% <small>vs prev 30d</small></span>';
         }
-        // down
-        return '<span class="dash-stat__delta dash-stat__delta--down"><i class="bi bi-arrow-down-short"></i> ' . abs($delta['pct']) . '% <small>vs prev 30d</small></span>';
+        if ($delta['direction'] === 'down') {
+            return '<span class="dash-stat__delta dash-stat__delta--down"><i class="bi bi-arrow-down-short"></i> ' . $pct . '% <small>vs prev 30d</small></span>';
+        }
+        /* flat, but with a real 0% change → show it instead of "No data" */
+        return '<span class="dash-stat__delta dash-stat__delta--flat"><i class="bi bi-dash"></i> ' . $pct . '% <small>vs prev 30d</small></span>';
     };
 
     $statIcon = function (string $tone): string {
@@ -423,7 +424,7 @@
                                     </span>
                                     <span class="dash-activity__body">
                                         <p class="dash-activity__text">
-                                            <a href="{{ $evt['action'] }}">{{ $evt['text'] }}</a>
+                                            <a href="{{ $evt['action'] }}">{!! $evt['text'] !!}</a>
                                         </p>
                                         <p class="dash-activity__time">
                                             <i class="bi bi-clock me-1" style="opacity: 0.6;"></i>
