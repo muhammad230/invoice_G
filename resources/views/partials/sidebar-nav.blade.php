@@ -25,7 +25,7 @@
     $menu = [
         $item('dashboard',                   'bi-grid-1x2-fill',    'Dashboard'),
         $item('invoices.create',             'bi-file-earmark-plus', 'Create Invoice', ['invoice.create', 'invoices.create']),
-        $item('invoices.index',              'bi-receipt-cutoff',   'Invoices', ['invoices.*', 'invoices.pdf', 'invoices.mark-paid', 'invoices.duplicate', 'invoice.download']),
+        $item('invoices.index',              'bi-receipt-cutoff',   'Invoices', ['invoices.*', 'invoices.pdf', 'invoices.mark-paid', 'invoices.duplicate']),
         $item('clients.index',               'bi-people-fill',      'Clients', ['clients.*']),
         $item('products.index',              'bi-bag-check-fill',   'Products &amp; Services', ['products.*']),
         $item('settings.business-profile.edit','bi-gear-fill',     'Settings', ['settings.*']),
