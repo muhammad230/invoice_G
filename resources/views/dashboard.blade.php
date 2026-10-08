@@ -44,7 +44,7 @@
     {{-- =====================================================================
          GREETING ROW — left: Good morning {name}, right: today date card
          ===================================================================== --}}
-    <div class="dash-greet row g-4 align-items-center">
+    <div class="dash-greet row g-3 align-items-center mb-3">
         <div class="col-12 col-lg-8">
             <h1 class="dash-greet__salutation">
                 {{ $greeting }}, <span class="accent">{{ $user->name }}</span> 👋
@@ -53,8 +53,8 @@
                 Here&rsquo;s what&rsquo;s happening with your invoices today.
             </p>
             @if (!empty($currency['mixed']))
-                <div class="alert alert-sm d-inline-flex align-items-center gap-2 mt-3 mb-0"
-                     style="background: rgba(242,163,58,0.12); border: 1px solid rgba(242,163,58,0.35); color: var(--ink); border-radius: 10px; font-size: 0.88rem;">
+                <div class="alert alert-sm d-inline-flex align-items-center gap-2 mt-2 mb-0"
+                     style="background: rgba(242,163,58,0.12); border: 1px solid rgba(242,163,58,0.35); color: var(--ink); border-radius: 9px; font-size: 0.8rem; padding: 0.5rem 0.75rem;">
                     <i class="bi bi-info-circle-fill" style="color: var(--saffron-dark);"></i>
                     <span>
                         You use multiple currencies (<strong>{{ implode(', ', $currency['list']) }}</strong>).
@@ -83,7 +83,7 @@
          4 STAT CARDS (2x2 on tablet, 4 on desktop, 1 column on mobile)
          Stat 0=total invoices, 1=revenue paid, 2=pending, 3=overdue
          ===================================================================== --}}
-    <div class="row g-4 mb-4">
+    <div class="row g-3 mb-3">
         @foreach ([$stats[0], $stats[1], $stats[2], $stats[3]] as $s)
             <div class="col-12 col-sm-6 col-xl-3">
                 <div class="dash-stat">
@@ -110,12 +110,12 @@
          MAIN GRID — LEFT (8 col): line chart + recent invoices table
                     RIGHT (4 col): doughnut chart + CTA/Quick links/Activity
          ===================================================================== --}}
-    <div class="row g-4">
+    <div class="row g-3">
         {{-- LEFT COLUMN (charts + table) ------------------------------------ --}}
         <div class="col-12 col-xl-8 order-1">
 
             {{-- Line chart: paid revenue over time -------------------------- --}}
-            <div class="card panel-card dash-chart-card mb-4">
+            <div class="card panel-card dash-chart-card mb-3">
                 <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-3">
                     <div>
                         <h2 class="card-title">Invoice Overview</h2>
@@ -149,7 +149,7 @@
                             </a>
                         </div>
                     @else
-                        <div style="position: relative; height: 300px;">
+                        <div style="position: relative; height: 250px;">
                             <canvas id="lineChart"
                                     data-chart-url="{{ route('dashboard.chart') }}"
                                     data-labels='@json($chart['labels'])'
@@ -184,15 +184,15 @@
                         </div>
                     @else
                         <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0">
+                            <table class="table table-sm table-hover align-middle mb-0">
                                 <thead>
-                                    <tr style="background: rgba(18,32,46,0.02); font-size: 0.8125rem; color: var(--ink-soft);">
-                                        <th scope="col" class="px-4 py-3">Invoice</th>
-                                        <th scope="col" class="px-4 py-3">Client</th>
-                                        <th scope="col" class="px-4 py-3">Date</th>
-                                        <th scope="col" class="px-4 py-3 text-end">Amount</th>
-                                        <th scope="col" class="px-4 py-3">Status</th>
-                                        <th scope="col" class="px-4 py-3 text-end">Actions</th>
+                                    <tr style="background: rgba(18,32,46,0.02); font-size: 0.75rem; color: var(--ink-soft);">
+                                        <th scope="col" class="px-3 py-2">Invoice</th>
+                                        <th scope="col" class="px-3 py-2">Client</th>
+                                        <th scope="col" class="px-3 py-2">Date</th>
+                                        <th scope="col" class="px-3 py-2 text-end">Amount</th>
+                                        <th scope="col" class="px-3 py-2">Status</th>
+                                        <th scope="col" class="px-3 py-2 text-end">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -214,27 +214,27 @@
                                             };
                                         @endphp
                                         <tr>
-                                            <td class="px-4 py-3">
-                                                <a href="{{ route('invoices.show', $inv) }}" class="fw-semibold ink text-decoration-none">
+                                            <td class="px-3 py-2">
+                                                <a href="{{ route('invoices.show', $inv) }}" class="fw-semibold ink text-decoration-none" style="font-size: 0.88rem;">
                                                     {{ $inv->invoice_number }}
                                                 </a>
                                             </td>
-                                            <td class="px-4 py-3">
+                                            <td class="px-3 py-2" style="font-size: 0.86rem;">
                                                 {{ optional($inv->client)->name ?? '—' }}
                                             </td>
-                                            <td class="px-4 py-3 ink-soft" style="font-size: 0.92rem;">
+                                            <td class="px-3 py-2 ink-soft" style="font-size: 0.82rem;">
                                                 {{ $inv->invoice_date->format('M j, Y') }}
                                             </td>
-                                            <td class="px-4 py-3 text-end fw-semibold" style="font-variant-numeric: tabular-nums;">
+                                            <td class="px-3 py-2 text-end fw-semibold" style="font-variant-numeric: tabular-nums; font-size: 0.88rem;">
                                                 {{ $inv->total_formatted }}
                                             </td>
-                                            <td class="px-4 py-3">
+                                            <td class="px-3 py-2">
                                                 <span class="badge rounded-pill {{ $badgeClass }}"
-                                                      style="font-size: 0.78rem; padding: 0.35rem 0.7rem;">
+                                                      style="font-size: 0.7rem; padding: 0.28rem 0.6rem;">
                                                     {{ $badgeLabel }}
                                                 </span>
                                             </td>
-                                            <td class="px-4 py-3 text-end">
+                                            <td class="px-3 py-2 text-end">
                                                 <div class="dropdown d-inline-block">
                                                     <button class="btn btn-sm btn-outline-ink dropdown-toggle"
                                                             type="button"
@@ -291,17 +291,17 @@
         <div class="col-12 col-xl-4 order-2">
 
             {{-- Quick actions: Create Invoice + Quick links ----------------- --}}
-            <div class="card panel-card mb-4">
+            <div class="card panel-card mb-3">
                 <div class="card-body">
                     <a href="{{ route('invoices.create') }}"
-                       class="btn btn-saffron btn-lg dash-cta-btn">
+                       class="btn btn-saffron dash-cta-btn">
                         <i class="bi bi-file-earmark-plus"></i>
                         Create New Invoice
                     </a>
 
-                    <div class="mt-4 pt-3" style="border-top: 1px dashed rgba(18,32,46,0.08);">
+                    <div class="mt-3 pt-2" style="border-top: 1px dashed rgba(18,32,46,0.08);">
                         <div class="d-flex align-items-center justify-content-between mb-2 px-1">
-                            <span class="fw-semibold" style="color: var(--ink); font-size: 0.95rem;">
+                            <span class="fw-semibold" style="color: var(--ink); font-size: 0.88rem;">
                                 Quick links
                             </span>
                         </div>
@@ -339,7 +339,7 @@
             </div>
 
             {{-- Payment Status doughnut chart ------------------------------- --}}
-            <div class="card panel-card mb-4">
+            <div class="card panel-card mb-3">
                 <div class="card-header">
                     <h2 class="card-title">Payment Status</h2>
                     <p class="card-subtitle">All invoices across statuses</p>
@@ -348,8 +348,8 @@
                     @if ($donut['total'] === 0)
                         <div class="chart-empty py-4">
                             <div class="chart-empty__icon"><i class="bi bi-pie-chart-fill"></i></div>
-                            <h3 class="chart-empty__title" style="font-size: 1.05rem;">No data</h3>
-                            <p class="chart-empty__subtitle" style="font-size: 0.88rem; margin-bottom: 0;">
+                            <h3 class="chart-empty__title">No data</h3>
+                            <p class="chart-empty__subtitle" style="margin-bottom: 0;">
                                 Once you have invoices, this chart shows the breakdown between paid, pending, and overdue.
                             </p>
                         </div>
@@ -359,7 +359,7 @@
                                     data-labels='@json($donut['labels'])'
                                     data-values='@json($donut['counts'])'
                                     data-colors='@json($donut['colors'])'
-                                    style="width: 100%; height: 260px;">
+                                    style="width: 100%; height: 220px;">
                             </canvas>
                             <div class="dash-donut-center" aria-hidden="true">
                                 <span class="dash-donut-center__label">Total</span>
@@ -401,8 +401,8 @@
                     @if (count($activity) === 0)
                         <div class="chart-empty py-4">
                             <div class="chart-empty__icon"><i class="bi bi-clock-history"></i></div>
-                            <h3 class="chart-empty__title" style="font-size: 1.05rem;">No activity yet</h3>
-                            <p class="chart-empty__subtitle" style="font-size: 0.88rem; margin-bottom: 0;">
+                            <h3 class="chart-empty__title">No activity yet</h3>
+                            <p class="chart-empty__subtitle" style="margin-bottom: 0;">
                                 Start by adding a client or creating an invoice — your activity will appear here.
                             </p>
                         </div>
