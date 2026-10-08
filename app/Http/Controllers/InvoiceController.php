@@ -11,10 +11,10 @@ use App\Models\Product;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class InvoiceController extends Controller
 {
@@ -477,7 +477,7 @@ class InvoiceController extends Controller
      * InvoicePolicy@view gates access; falls back to user's BusinessProfile
      * for logo / business info when the invoice has none stored.
      */
-    public function download(Invoice $invoice): StreamedResponse
+    public function download(Invoice $invoice): Response
     {
         $this->authorize('view', $invoice);
         $invoice->load(['client', 'items', 'user.businessProfile']);
