@@ -53,16 +53,46 @@
             <p class="dash-greet__subtitle">
                 Here&rsquo;s what&rsquo;s happening with your invoices today.
             </p>
-            @if (!empty($currency['mixed']))
-                <div class="alert alert-sm d-inline-flex align-items-center gap-2 mt-2 mb-0"
-                     style="background: rgba(242,163,58,0.12); border: 1px solid rgba(242,163,58,0.35); color: var(--ink); border-radius: 9px; font-size: 0.8rem; padding: 0.5rem 0.75rem;">
-                    <i class="bi bi-info-circle-fill" style="color: var(--saffron-dark);"></i>
-                    <span>
-                        You use multiple currencies (<strong>{{ implode(', ', $currency['list']) }}</strong>).
-                        Aggregates shown use your most-used currency:
-                        <strong>{{ $currency['name'] }} ({{ $currency['code'] }})</strong>.
-                    </span>
+
+            {{-- Currency selector: only currencies this user has invoices in.
+                 Keeps the choice in the query string (?currency=PKR) and drives
+                 every stat card, the line chart, the donut and its legend. --}}
+            @php $currencyOptions = $currency['available'] ?? []; @endphp
+            @if (count($currencyOptions) > 1)
+                <div class="dropdown d-inline-block mt-2">
+                    <button type="button"
+                            class="dash-currency-btn dropdown-toggle"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false"
+                            aria-haspopup="true"
+                            aria-label="Select display currency">
+                        <i class="bi bi-coins" aria-hidden="true"></i>
+                        <span class="dash-currency-btn__code">{{ $currency['code'] }}</span>
+                        <span class="dash-currency-btn__sym">{{ $currency['symbol'] }}</span>
+                        <span class="dash-currency-btn__name">{{ $currency['name'] }}</span>
+                    </button>
+                    <ul class="dropdown-menu dash-currency-menu shadow-sm">
+                        @foreach ($currencyOptions as $opt)
+                            <li>
+                                <a class="dropdown-item {{ $opt['code'] === $currency['code'] ? 'active' : '' }}"
+                                   href="{{ route('dashboard', ['currency' => $opt['code']]) }}">
+                                    <span class="dash-currency-menu__code">{{ $opt['code'] }}</span>
+                                    <span class="dash-currency-menu__sym">{{ $opt['symbol'] }}</span>
+                                    <span class="dash-currency-menu__name">{{ $opt['name'] }}</span>
+                                    <span class="dash-currency-menu__count">{{ $opt['count'] }}</span>
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
                 </div>
+            @elseif (count($currencyOptions) === 1)
+                <span class="dash-currency-btn dash-currency-btn--static mt-2"
+                      title="All your invoices are in {{ $currency['name'] }}">
+                    <i class="bi bi-coins" aria-hidden="true"></i>
+                    <span class="dash-currency-btn__code">{{ $currency['code'] }}</span>
+                    <span class="dash-currency-btn__sym">{{ $currency['symbol'] }}</span>
+                    <span class="dash-currency-btn__name">{{ $currency['name'] }}</span>
+                </span>
             @endif
         </div>
         <div class="col-12 col-lg-4 text-lg-end">
@@ -109,9 +139,10 @@
 
     {{-- =====================================================================
          MAIN GRID — LEFT (8 col): line chart + recent invoices table
-                    RIGHT (4 col): doughnut chart + CTA/Quick links/Activity
+                    RIGHT (4 col): quick links + doughnut chart
+         align-items-start → each column ends where its content ends
          ===================================================================== --}}
-    <div class="row g-3">
+    <div class="row g-3 align-items-start">
         {{-- LEFT COLUMN (charts + table) ------------------------------------ --}}
         <div class="col-12 col-xl-8 order-1">
 
@@ -150,12 +181,21 @@
                             </a>
                         </div>
                     @else
+                        @php $chartEmpty = ((int) $chart['total_paid_cents']) <= 0; @endphp
                         <div style="position: relative; height: 250px;">
                             <canvas id="lineChart"
                                     data-chart-url="{{ route('dashboard.chart') }}"
+                                    data-currency="{{ $currency['code'] }}"
                                     data-labels='@json($chart['labels'])'
                                     data-values='@json($chart['data'])'>
                             </canvas>
+                            {{-- In-chart empty state: shown instead of a flat line
+                                 whenever the selected currency has no paid
+                                 invoices in the selected range. --}}
+                            <div class="chart-overlay" id="chartOverlay" @unless($chartEmpty) style="display: none;" @endunless>
+                                <span class="chart-overlay__icon" aria-hidden="true"><i class="bi bi-cash-stack"></i></span>
+                                <p class="chart-overlay__text">No paid invoices in this period</p>
+                            </div>
                         </div>
                     @endif
                 </div>
@@ -166,7 +206,7 @@
                 <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-3">
                     <div>
                         <h2 class="card-title">Recent Invoices</h2>
-                        <p class="card-subtitle">Last 5 invoices across all statuses</p>
+                        <p class="card-subtitle">Last 5 invoices · all currencies</p>
                     </div>
                     <a href="{{ route('invoices.index') }}" class="btn btn-outline-ink btn-sm">
                         View all <i class="bi bi-arrow-right ms-1"></i>
@@ -343,7 +383,7 @@
             <div class="card panel-card mb-3">
                 <div class="card-header">
                     <h2 class="card-title">Payment Status</h2>
-                    <p class="card-subtitle">All invoices across statuses</p>
+                    <p class="card-subtitle">All {{ $currency['code'] }} invoices by status</p>
                 </div>
                 <div class="card-body">
                     @if ($donut['total'] === 0)
@@ -392,11 +432,25 @@
                 </div>
             </div>
 
-            {{-- Recent activity list --------------------------------------- --}}
+        </div>
+    </div>
+
+    {{-- =====================================================================
+         RECENT ACTIVITY — full-width row below the main grid.
+         Keeping it out of the right column lets the left column end exactly
+         where Recent Invoices ends (no empty gap under the table).
+         ===================================================================== --}}
+    <div class="row g-3 mt-xl-1">
+        <div class="col-12">
             <div class="card panel-card">
-                <div class="card-header">
-                    <h2 class="card-title">Recent Activity</h2>
-                    <p class="card-subtitle">Latest invoices and client updates</p>
+                <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-3">
+                    <div>
+                        <h2 class="card-title">Recent Activity</h2>
+                        <p class="card-subtitle">Latest 5 updates across all currencies</p>
+                    </div>
+                    <a href="{{ route('invoices.index') }}" class="btn btn-outline-ink btn-sm">
+                        View all <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
                 </div>
                 <div class="card-body">
                     @if (count($activity) === 0)
@@ -437,7 +491,6 @@
                     @endif
                 </div>
             </div>
-
         </div>
     </div>
 @endsection
@@ -450,34 +503,75 @@
     // ============================================================
     // 1) LINE CHART — paid revenue over time
     // ============================================================
-    const lineCanvas = document.getElementById('lineChart');
+    const lineCanvas   = document.getElementById('lineChart');
+    const chartOverlay = document.getElementById('chartOverlay');
     let lineChartInstance = null;
+
+    // Compact Y-axis label with the selected currency symbol: $500, $1k, $2.5k
+    function compactMoney(amount) {
+        const sign = '{{ $symbol }}';
+        const n = Number(amount) || 0;
+        if (Math.abs(n) >= 1000) {
+            const k = Math.round((n / 1000) * 10) / 10;
+            return sign + (Number.isInteger(k) ? String(k) : k.toFixed(1)) + 'k';
+        }
+        return sign + String(Math.round(n));
+    }
 
     function buildLineChart(labels, values) {
         if (!lineCanvas) return;
         const ctx = lineCanvas.getContext('2d');
-        if (lineChartInstance) lineChartInstance.destroy();
+        if (lineChartInstance) {
+            lineChartInstance.destroy();
+            lineChartInstance = null;
+        }
+
+        const rows    = (values || []).map(Number);
+        const hasData = rows.some(v => v > 0);
+
+        // No paid invoices in this range → message INSIDE the chart instead
+        // of a flat line at 0.
+        if (chartOverlay) chartOverlay.style.display = hasData ? 'none' : 'flex';
 
         const gradient = ctx.createLinearGradient(0, 0, 0, 300);
         gradient.addColorStop(0, 'rgba(242, 163, 58, 0.28)');
         gradient.addColorStop(1, 'rgba(242, 163, 58, 0.02)');
 
+        // Y axis: whole-number ticks only (precision 0 → no repeated labels),
+        // compact currency labels, and a clean 0–100 grid when empty.
+        const yScale = {
+            grid: { color: 'rgba(18, 32, 46, 0.05)' },
+            border: { display: false, dash: [4, 4] },
+            ticks: {
+                color: '#4A5866',
+                font: { size: 11 },
+                precision: 0,
+                callback: function (v) { return compactMoney(v); }
+            }
+        };
+        if (hasData) {
+            yScale.beginAtZero = true;
+        } else {
+            yScale.min = 0;
+            yScale.suggestedMax = 100;
+        }
+
         lineChartInstance = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: labels,
+                labels: labels || [],
                 datasets: [{
                     label: 'Paid revenue',
-                    data: values,
-                    borderColor: '#F2A33A',
-                    backgroundColor: gradient,
-                    borderWidth: 2.5,
+                    data: rows,
+                    borderColor: hasData ? '#F2A33A' : 'rgba(242, 163, 58, 0)',
+                    backgroundColor: hasData ? gradient : 'rgba(242, 163, 58, 0)',
+                    borderWidth: hasData ? 2.5 : 0,
                     pointRadius: 0,
-                    pointHoverRadius: 5,
+                    pointHoverRadius: hasData ? 5 : 0,
                     pointHoverBackgroundColor: '#F2A33A',
                     pointHoverBorderColor: '#FFFFFF',
                     pointHoverBorderWidth: 2,
-                    fill: true,
+                    fill: hasData,
                     tension: 0.35,
                 }]
             },
@@ -487,6 +581,7 @@
                 plugins: {
                     legend: { display: false },
                     tooltip: {
+                        enabled: hasData,
                         backgroundColor: '#12202E',
                         titleColor: '#FFFFFF',
                         bodyColor: '#FFFFFF',
@@ -514,20 +609,7 @@
                         },
                         border: { display: false }
                     },
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            color: 'rgba(18, 32, 46, 0.05)',
-                        },
-                        ticks: {
-                            color: '#4A5866',
-                            font: { size: 11 },
-                            callback: function(v) {
-                                return '{{ $symbol }}' + Number(v).toFixed(0);
-                            }
-                        },
-                        border: { display: false, dash: [4, 4] }
-                    }
+                    y: yScale
                 }
             }
         });
@@ -535,11 +617,12 @@
 
     // Initial render from data props (server-rendered 30D default)
     if (lineCanvas) {
-        const initLabels = JSON.parse(lineCanvas.getAttribute('data-labels') || '[]');
-        const initValues = JSON.parse(lineCanvas.getAttribute('data-values') || '[]');
+        const initLabels   = JSON.parse(lineCanvas.getAttribute('data-labels') || '[]');
+        const initValues   = JSON.parse(lineCanvas.getAttribute('data-values') || '[]');
+        const chartCurrency = lineCanvas.getAttribute('data-currency') || '';
         buildLineChart(initLabels, initValues);
 
-        // Wire range buttons → fetch JSON from /dashboard/chart?range=xx without refresh
+        // Wire range buttons → fetch JSON from /dashboard/chart?range=xx&currency=xx
         const chartUrl  = lineCanvas.getAttribute('data-chart-url');
         const rangeBtns = document.querySelectorAll('.dash-chart-btn');
         const totalEl   = document.getElementById('chartRangeTotal');
@@ -559,14 +642,18 @@
                 if (!chartUrl) return;
                 try {
                     const range = btn.getAttribute('data-range') || '30d';
-                    const resp = await fetch(chartUrl + '?range=' + encodeURIComponent(range), {
+                    let url = chartUrl + '?range=' + encodeURIComponent(range);
+                    if (chartCurrency) {
+                        url += '&currency=' + encodeURIComponent(chartCurrency);
+                    }
+                    const resp = await fetch(url, {
                         headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
                         credentials: 'same-origin'
                     });
                     if (!resp.ok) throw new Error('HTTP ' + resp.status);
                     const data = await resp.json();
                     buildLineChart(data.labels || [], data.data || []);
-                    if (totalEl && data.total_for_range) {
+                    if (totalEl && typeof data.total_for_range === 'string') {
                         totalEl.innerHTML = 'Paid <strong>' + data.total_for_range + '</strong>';
                     }
                 } catch (err) {

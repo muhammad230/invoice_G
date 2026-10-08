@@ -1321,6 +1321,20 @@ body.app-shell {
     padding: 8px 20px;
 }
 
+/* One flex row: left cluster (burger + logo + search) on the start side,
+   right cluster pinned to the far right edge. */
+.app-topbar__row {
+    justify-content: space-between;
+}
+
+.app-topbar__right {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+     gap: 470px;         /* bell ↔ user menu  */
+    margin-left: auto;  /* pushed to the far right edge */
+}
+
 .btn-ghost {
     background: transparent;
     border: 1px solid transparent;
@@ -1442,7 +1456,7 @@ body.app-shell {
 
 .app-topbar__avatarbtn {
     padding: 4px 6px;
-    border-radius: 14px;
+    border-radius: 12px;
 }
 
 .app-topbar__avatarbtn:hover {
@@ -2027,7 +2041,7 @@ body.app-shell {
     /* Topbar: burger + brand + avatar no longer fit beside the search box
        on phones — move the search onto its own full-width row. */
     .app-topbar > .container-fluid { height: auto; padding-top: 8px; padding-bottom: 8px; }
-    .app-topbar > .container-fluid > .d-flex { flex-wrap: wrap; }
+    .app-topbar__row { flex-wrap: wrap; }
     .app-topbar__search {
         order: 5;
         flex: 1 0 100%;
@@ -2041,4 +2055,112 @@ body.app-shell {
     .app-topbar__search { margin-left: 0; }
     .app-topbar__search .form-control { font-size: 0.88rem; }
     .avatar--sm { width: 32px; height: 32px; }
+    /* Keep the bar overflow-free on small phones: icon only, no wordmark. */
+    .app-topbar__brand-text { display: none; }
+}
+
+/* ============================================================
+   Currency selector (page header) — same navy/saffron theme
+   ============================================================ */
+.dash-currency-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: #FFFFFF;
+    border: 1px solid rgba(18, 32, 46, 0.12);
+    border-radius: 12px;
+    padding: 6px 12px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--ink);
+    box-shadow: var(--shadow-sm);
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.dash-currency-btn:hover {
+    border-color: var(--saffron);
+    background: #FFFDF8;
+}
+
+.dash-currency-btn i { color: var(--saffron-dark); }
+.dash-currency-btn__sym,
+.dash-currency-btn__name { color: var(--ink-soft); font-weight: 500; }
+.dash-currency-btn--static { cursor: default; }
+.dash-currency-btn--static:hover { border-color: rgba(18, 32, 46, 0.12); background: #FFFFFF; }
+
+.dash-currency-menu {
+    border-radius: 12px;
+    border-color: rgba(18, 32, 46, 0.1);
+    padding: 6px;
+    min-width: 250px;
+}
+
+.dash-currency-menu .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 8px;
+    padding: 7px 10px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.dash-currency-menu__code { font-weight: 600; color: var(--ink); }
+.dash-currency-menu__sym { color: var(--ink-soft); }
+.dash-currency-menu__name {
+    margin-left: auto;
+    color: var(--ink-soft);
+    font-size: 0.78rem;
+    font-weight: 500;
+}
+.dash-currency-menu__count {
+    margin-left: 6px;
+    font-size: 0.7rem;
+    color: var(--ink-soft);
+    background: rgba(18, 32, 46, 0.06);
+    border-radius: 999px;
+    padding: 1px 7px;
+    font-weight: 600;
+}
+
+.dash-currency-menu .dropdown-item.active { background: var(--ink); }
+.dash-currency-menu .dropdown-item.active .dash-currency-menu__code,
+.dash-currency-menu .dropdown-item.active .dash-currency-menu__sym,
+.dash-currency-menu .dropdown-item.active .dash-currency-menu__name { color: #FFFFFF; }
+.dash-currency-menu .dropdown-item.active .dash-currency-menu__count {
+    background: rgba(255, 255, 255, 0.18);
+    color: #FFFFFF;
+}
+
+/* ============================================================
+   Line chart empty state — message shown INSIDE the chart
+   instead of a flat zero line
+   ============================================================ */
+.chart-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    text-align: center;
+    padding: 12px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.72);
+    pointer-events: none;
+}
+
+.chart-overlay__icon {
+    font-size: 1.5rem;
+    color: var(--saffron-dark);
+    opacity: 0.75;
+}
+
+.chart-overlay__text {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 0.85rem;
+    font-weight: 500;
 }

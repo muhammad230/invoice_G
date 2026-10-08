@@ -32,26 +32,59 @@ class DashboardController extends Controller
     }
 
     /**
-     * Choose the user's most-used currency for aggregated stats.
+     * Invoices grouped by currency: [code => count], most used first.
+     * Ties are broken alphabetically so the default is deterministic.
      */
-    protected function primaryCurrency(\App\Models\User $user): array
+    protected function currencyCounts(\App\Models\User $user): array
     {
-        $currencyCounts = $user->invoices()
+        return $user->invoices()
             ->selectRaw('currency, COUNT(*) as cnt')
             ->groupBy('currency')
             ->orderByDesc('cnt')
+            ->orderBy('currency')
             ->pluck('cnt', 'currency')
             ->all();
+    }
 
-        $code     = array_key_first($currencyCounts) ?: 'USD';
-        $meta     = Invoice::currencies()[$code] ?? Invoice::currencies()['USD'];
+    /**
+     * Resolve the currency selected via ?currency=CODE, falling back to the
+     * user's most-used currency. Only currencies the user actually has
+     * invoices in are ever accepted — anything else falls back silently.
+     *
+     * Returns display meta + the options list for the header selector.
+     */
+    protected function resolveCurrency(\App\Models\User $user, mixed $requested = null): array
+    {
+        $counts = $this->currencyCounts($user);
+
+        $code = strtoupper((string) $requested);
+        if ($code === '' || !isset($counts[$code])) {
+            $code = array_key_first($counts) ?: 'USD';
+        }
+
+        $all = Invoice::currencies();
+        $meta = $all[$code] ?? $all['USD'];
+
+        $available = [];
+        foreach ($counts as $candidate => $cnt) {
+            if (!isset($all[$candidate])) {
+                continue;
+            }
+            $available[] = [
+                'code'   => $candidate,
+                'symbol' => $all[$candidate]['symbol'],
+                'name'   => $all[$candidate]['name'],
+                'count'  => (int) $cnt,
+            ];
+        }
 
         return [
-            'code'           => $code,
-            'symbol'         => $meta['symbol'],
-            'name'           => $meta['name'],
-            'mixed'          => count($currencyCounts) > 1,
-            'list'           => array_keys($currencyCounts),
+            'code'      => $code,
+            'symbol'    => $meta['symbol'],
+            'name'      => $meta['name'],
+            'mixed'     => count($counts) > 1,
+            'list'      => array_keys($counts),
+            'available' => $available,
         ];
     }
 
@@ -81,7 +114,8 @@ class DashboardController extends Controller
     /**
      * Build 4 stats cards: current window (30d) vs previous window (30d before).
      *
-     * - Total Invoices  : count
+     * - Total Invoices  : ALL invoices in the selected currency (all time);
+     *                     the badge still shows the 30d vs prev-30d change
      * - Total Revenue   : sum(paid invoices total_cents)
      * - Pending Payments: sum(pending & not overdue total_cents)
      * - Overdue         : sum(overdue total_cents)
@@ -247,15 +281,20 @@ class DashboardController extends Controller
     }
 
     /**
-     * Payment-status doughnut data (counts): paid, pending, overdue.
-     * Percentages are relative to all invoices; a row with all 0 is ok.
+     * Payment-status doughnut data (counts): paid, pending, overdue —
+     * scoped to ONE currency so it agrees with the stat cards.
+     *
+     * "pending" is computed as the remainder (total - paid - overdue) so
+     * Paid + Pending + Overdue always adds up to Total Invoices, even when
+     * draft (unsent) invoices exist.
      */
-    public function buildDoughnutData(\App\Models\User $user): array
+    public function buildDoughnutData(\App\Models\User $user, string $currency): array
     {
-        $paid    = (int) $user->invoices()->paid()->count();
-        $pending = (int) $user->invoices()->pendingNotOverdue()->count();
-        $overdue = (int) $user->invoices()->overdue()->count();
-        $total   = $paid + $pending + $overdue;
+        $base   = fn () => $user->invoices()->where('currency', $currency);
+        $total  = (int) $base()->count();
+        $paid   = (int) $base()->paid()->count();
+        $overdue= (int) $base()->overdue()->count();
+        $pending= max(0, $total - $paid - $overdue);
 
         $pct = fn ($n) => $total <= 0 ? 0 : (float) number_format(($n / $total) * 100, 1, '.', '');
 
@@ -265,12 +304,13 @@ class DashboardController extends Controller
             'colors'   => ['#3F6B50', '#F2A33A', '#B3372F'],
             'percents' => [$pct($paid), $pct($pending), $pct($overdue)],
             'total'    => $total,
+            'currency' => $currency,
         ];
     }
 
     /**
      * Build the Recent Activity list from existing invoices + clients records.
-     * Returns up to 8 events sorted newest-first. Each event carries a
+     * Returns up to 5 events sorted newest-first. Each event carries a
      * formatted Carbon diffForHumans relative time.
      */
     protected function buildActivity(\App\Models\User $user): array
@@ -343,7 +383,7 @@ class DashboardController extends Controller
 
         usort($events, fn ($a, $b) => $b['sort'] - $a['sort']);
 
-        return array_slice($events, 0, 8);
+        return array_slice($events, 0, 5);
     }
 
     // ------------------------------------------------------------------
@@ -361,10 +401,10 @@ class DashboardController extends Controller
         $greet   = $hour < 12 ? 'Good morning' : ($hour < 18 ? 'Good afternoon' : 'Good evening');
         $today   = Date::today();
 
-        $primary  = $this->primaryCurrency($user);
+        $primary  = $this->resolveCurrency($user, $request->query('currency'));
         $stats    = $this->buildStats($user, $primary['code']);
         $chart    = $this->buildLineChartData($user, $primary['code'], '30d');
-        $donut    = $this->buildDoughnutData($user);
+        $donut    = $this->buildDoughnutData($user, $primary['code']);
         $activity = $this->buildActivity($user);
 
         $recentInvoices = $user->invoices()
@@ -395,19 +435,20 @@ class DashboardController extends Controller
     public function chart(Request $request): JsonResponse
     {
         $user    = $this->user();
-        $primary = $this->primaryCurrency($user);
         $range   = strtolower((string) $request->input('range', '30d'));
         if (!in_array($range, ['7d', '30d', '3m', '1y'], true)) {
             $range = '30d';
         }
 
-        $chart = $this->buildLineChartData($user, $primary['code'], $range);
-        $total = $primary['symbol'] . number_format($chart['total_paid_cents'] / 100, 2);
+        $currency = $this->resolveCurrency($user, $request->query('currency'));
+        $chart    = $this->buildLineChartData($user, $currency['code'], $range);
+        $total    = $currency['symbol'] . number_format($chart['total_paid_cents'] / 100, 2);
 
         return response()->json([
             'labels'         => $chart['labels'],
             'data'           => $chart['data'],
             'range'          => $chart['range'],
+            'currency'       => $currency['code'],
             'total_for_range'=> $total,
         ]);
     }

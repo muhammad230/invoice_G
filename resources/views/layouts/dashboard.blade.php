@@ -98,16 +98,13 @@
     <div class="app-main">
 
         {{-- =====================================================================
-             TOP BAR
-             - Hamburger (opens offcanvas on <992px)
-             - Brand logo (mobile/tablet only — desktop shows it in the sidebar)
-             - Search form (GET /invoices with q)
-             - Far right end (always last): notification bell → demo user
-               avatar + name/role + dropdown (Profile, Logout)
+             TOP BAR — one flex row, justify-content: space-between
+             LEFT : hamburger (mobile only) + brand logo (mobile/tablet) + search
+             RIGHT: margin-left:auto, 16px gap → notification bell + user menu
              ===================================================================== --}}
         <header class="app-topbar">
             <div class="container-fluid">
-                <div class="d-flex align-items-center gap-3 gap-lg-4">
+                <div class="app-topbar__row d-flex align-items-center gap-3 gap-lg-4">
 
                     {{-- Hamburger (mobile/tablet only) --}}
                     <button class="btn btn-ghost app-topbar__burger"
@@ -125,7 +122,7 @@
                         <span class="sidebar-brand__icon sidebar-brand__icon--sm" aria-hidden="true">
                             <i class="bi bi-check2"></i>
                         </span>
-                        <span class="fw-bold" style="color: var(--ink); font-family: 'Fraunces', Georgia, serif;">InvoiceFlow</span>
+                        <span class="fw-bold app-topbar__brand-text" style="color: var(--ink); font-family: 'Fraunces', Georgia, serif;">InvoiceFlow</span>
                     </a>
 
                     {{-- Search box (flex-grow for center placement) --}}
@@ -151,8 +148,9 @@
                         </div>
                     </form>
 
-                    {{-- Right cluster: bell + avatar + menu --}}
-                    <div class="d-flex align-items-center gap-2 gap-md-3 ms-auto">
+                    {{-- Right group: bell + user menu, kept together (16px gap)
+                         and pushed to the far right edge with margin-left:auto --}}
+                    <div class="app-topbar__right">
 
                         <button type="button"
                                 class="btn btn-ghost app-topbar__iconbtn"
@@ -178,7 +176,9 @@
                                         Business Owner
                                     </span>
                                 </span>
-                                <i class="bi bi-chevron-down d-none d-md-inline" style="color: var(--ink-soft); font-size: 0.875rem;"></i>
+                                {{-- Chevron stays visible on mobile too (only the
+                                     name + role text hide below 768px). --}}
+                                <i class="bi bi-chevron-down" style="color: var(--ink-soft); font-size: 0.875rem;"></i>
                             </button>
 
                             <ul class="dropdown-menu dropdown-menu-end app-dropdown-menu shadow-sm">
@@ -194,7 +194,7 @@
                                 <li>
                                     <a class="dropdown-item" href="{{ route('settings.business-profile.edit') }}">
                                         <i class="bi bi-person-gear me-2" style="color: var(--ink-soft);"></i>
-                                        Profile &amp; Settings
+                                        Profile
                                     </a>
                                 </li>
                                 <li><hr class="dropdown-divider"></li>
