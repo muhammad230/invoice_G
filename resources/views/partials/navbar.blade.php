@@ -40,10 +40,16 @@
                         <a class="nav-link" href="{{ route('clients.index') }}">Clients</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" href="{{ route('products.index') }}">Services</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="{{ route('invoices.index') }}">Invoices</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('invoice.create') }}">New invoice</a>
+                        <a class="nav-link" href="{{ route('invoices.create') }}">New invoice</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('settings.business-profile.edit') }}">Settings</a>
                     </li>
                 @endguest
             </ul>

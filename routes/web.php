@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\BusinessProfileController;
 
 /*
 |--------------------------------------------------------------------------
@@ -23,13 +25,11 @@ Route::get('/', function () {
 
 /*
 |--------------------------------------------------------------------------
-| Demo (unauthenticated) invoice builder → PDF.
-|   Used from the landing page "Get started free" CTA.
-|   No DB write — just validate and stream PDF.
+| Demo (unauthenticated) invoice builder — used from landing page CTA.
+| No DB write — guests fill the form, sign up first to save invoices.
 |--------------------------------------------------------------------------
 */
-Route::get('/invoice/create',  [InvoiceController::class, 'create'])      ->name('invoice.create');
-Route::post('/invoice/download', [InvoiceController::class, 'downloadLegacy'])->name('invoice.download');
+Route::get('/invoice/create',  [InvoiceController::class, 'create'])->name('invoice.create');
 
 /*
 |--------------------------------------------------------------------------
@@ -54,6 +54,15 @@ Route::middleware('auth')->group(function () {
     // Clients resource
     Route::resource('clients', ClientController::class)->except(['show']);
 
+    // Products / Services resource
+    Route::resource('products', ProductController::class)->except(['show']);
+
+    // Settings: Business Profile (GET + PUT)
+    Route::get('/settings/business-profile', [BusinessProfileController::class, 'edit'])
+        ->name('settings.business-profile.edit');
+    Route::put('/settings/business-profile', [BusinessProfileController::class, 'update'])
+        ->name('settings.business-profile.update');
+
     // Invoices resource + extra actions
     Route::resource('invoices', InvoiceController::class);
 
@@ -61,7 +70,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/invoices/{invoice}/mark-paid', [InvoiceController::class, 'markPaid'])
         ->name('invoices.mark-paid');
 
+    // Duplicate an invoice (copy with new number + today)
+    Route::post('/invoices/{invoice}/duplicate', [InvoiceController::class, 'duplicate'])
+        ->name('invoices.duplicate');
+
     // Stream PDF for a *persisted* invoice (uses DB data, scoped via policy)
-    Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'download'])
-        ->name('invoices.download');
+    Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'download'])
+        ->name('invoices.pdf');
 });

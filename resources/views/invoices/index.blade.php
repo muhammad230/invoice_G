@@ -161,13 +161,24 @@
                                                title="View invoice">
                                                 <i class="bi bi-eye me-1"></i> View
                                             </a>
-                                            <a href="{{ route('invoices.download', $invoice) }}"
+                                            <a href="{{ route('invoices.pdf', $invoice) }}"
                                                class="btn btn-sm"
                                                style="background: color-mix(in srgb, var(--saffron) 18%, #fff); color: var(--saffron-dark); border: 1px solid color-mix(in srgb, var(--saffron) 40%, #fff);"
                                                target="_blank" rel="noopener"
                                                title="Download PDF">
                                                 <i class="bi bi-filetype-pdf me-1"></i> PDF
                                             </a>
+                                            <form method="POST"
+                                                  action="{{ route('invoices.duplicate', $invoice) }}"
+                                                  class="d-inline m-0"
+                                                  onsubmit="return confirm('Duplicate invoice {{ $invoice->invoice_number }}? A new invoice number will be generated.');">
+                                                @csrf
+                                                <button type="submit"
+                                                        class="btn btn-sm btn-outline-ink"
+                                                        title="Duplicate this invoice">
+                                                    <i class="bi bi-files me-1"></i> Copy
+                                                </button>
+                                            </form>
                                         </div>
                                     </td>
                                 </tr>

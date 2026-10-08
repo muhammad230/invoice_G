@@ -5,20 +5,28 @@
     $pageTitle = $editing ? 'Edit invoice' : 'New Invoice';
     $pageHeading = $editing ? 'Edit invoice' : 'Create an invoice';
 
-    $oldOr = function ($key, $default = '') use ($editing, $invoice) {
+    // Prefill defaults: old() > invoice (edit) > controller-provided BusinessProfile.
+    $oldOr = function ($key, $default = '') use ($editing, $invoice, $business_name, $business_email, $business_phone, $business_address) {
         if (old($key, null) !== null) {
             return old($key);
         }
         if (!$editing) {
-            return $default;
+            // Create mode: use controller passed-in BusinessProfile values as default
+            return match ($key) {
+                'business_name'    => $business_name    ?? $default,
+                'business_email'   => $business_email   ?? $default,
+                'business_phone'   => $business_phone   ?? $default,
+                'business_address' => $business_address ?? $default,
+                default => $default,
+            };
         }
         // Edit mode: fall back to Invoice attributes (no attribute for nested items though).
         return match ($key) {
             'client_id'       => old('client_id', $invoice->client_id),
-            'business_name'   => old('business_name', $invoice->business_name),
-            'business_email'  => old('business_email', $invoice->business_email),
-            'business_phone'  => old('business_phone', $invoice->business_phone),
-            'business_address'=> old('business_address', $invoice->business_address),
+            'business_name'   => old('business_name', $invoice->business_name    ?? ($business_name    ?? $default)),
+            'business_email'  => old('business_email', $invoice->business_email  ?? ($business_email   ?? $default)),
+            'business_phone'  => old('business_phone', $invoice->business_phone  ?? ($business_phone   ?? $default)),
+            'business_address'=> old('business_address', $invoice->business_address ?? ($business_address ?? $default)),
             'invoice_number'  => old('invoice_number', $invoice->invoice_number),
             'invoice_date'    => old('invoice_date', $invoice->invoice_date->format('Y-m-d')),
             'due_date'        => old('due_date', optional($invoice->due_date)?->format('Y-m-d')),
@@ -30,6 +38,15 @@
             default => $default,
         };
     };
+
+    // Logo default (data URI): controller passed BusinessProfile, or invoice, or empty
+    if ($editing && !empty($invoice->logo_data)) {
+        $defaultLogo = $invoice->logo_data;
+    } elseif (!empty($logo_default)) {
+        $defaultLogo = $logo_default;
+    } else {
+        $defaultLogo = '';
+    }
 
     // Item rows: old() on failure, DB rows on edit, empty starter otherwise.
     if ($errors->any() || old('items')) {
@@ -50,14 +67,28 @@
 
     $oldItems = $oldItems ?: [['description' => '', 'quantity' => 1, 'price' => '']];
 
-    // Is the user authenticated? If yes -> persist + PDF buttons available.
+    // Is the user authenticated? If yes -> persist / clients / services available.
     $authed = Auth::check();
 
     // For the "return to invoice builder" link after adding a new client from modal/dropdown.
     if ($editing) {
         $clientReturnUrl = route('invoices.edit', $invoice);
     } else {
-        $clientReturnUrl = route('invoices.create');
+        $clientReturnUrl = $authed ? route('invoices.create') : route('invoice.create');
+    }
+
+    // Prepare products JSON for the JS service dropdown (only when authed).
+    if ($authed && isset($products)) {
+        $productsJson = $products->map(function ($p) {
+            return [
+                'id'          => $p->id,
+                'name'        => $p->name,
+                'description' => $p->description ?? '',
+                'price'       => number_format($p->price / 100, 2, '.', ''),
+            ];
+        })->values();
+    } else {
+        $productsJson = collect();
     }
 @endphp
 
@@ -77,6 +108,11 @@
                 @if ($editing)
                     <p class="ink-soft mb-0 mt-1">
                         Invoice <strong>{{ $invoice->invoice_number }}</strong> · updating will recalculate all totals.
+                    </p>
+                @elseif (!$authed)
+                    <p class="ink-soft mb-0 mt-1">
+                        Quick preview — to save or download,
+                        <a href="{{ route('register') }}" class="auth-link">create a free account</a>.
                     </p>
                 @endif
             </div>
@@ -103,7 +139,7 @@
                  ====================================================================== --}}
             <div class="col-lg-6">
 
-                {{-- Form action differs between create (POST invoices.store) + edit (PUT invoices.update) --}}
+                {{-- Form action differs: create (POST invoices.store) + edit (PUT invoices.update) --}}
                 @if ($authed)
                     <form id="invoiceForm"
                           action="{{ $editing ? route('invoices.update', $invoice) : route('invoices.store') }}"
@@ -114,17 +150,15 @@
                             @method('PUT')
                         @endif
                 @else
-                    {{-- Legacy guest-only PDF-only POST (no DB write). --}}
+                    {{-- Legacy guest-only demo — no DB write (route removed, show message) --}}
                     <form id="invoiceForm"
-                          action="{{ route('invoice.download') }}"
-                          method="POST"
-                          novalidate
-                          target="_blank">
-                        @csrf
+                          action="{{ route('register') }}"
+                          method="GET"
+                          novalidate>
                 @endif
 
-                    {{-- Hidden logo data URL (populated by JS on file select) --}}
-                    <input type="hidden" name="logo_data" id="logoData" value="{{ $editing ? e($invoice->logo_data) : '' }}">
+                    {{-- Hidden logo data URL (populated by JS on file select OR default from profile) --}}
+                    <input type="hidden" name="logo_data" id="logoData" value="{{ e($defaultLogo) }}">
 
                     {{-- 1. Your business ------------------------------------------------ --}}
                     <div class="card mb-4" style="border-radius: var(--radius); border: none; box-shadow: var(--shadow-sm);">
@@ -132,6 +166,11 @@
                             <h2 class="mb-3" style="font-size: 1.125rem;">
                                 <i class="bi bi-building me-2" style="color: var(--saffron);"></i>
                                 Your business
+                                @if ($authed)
+                                    <span class="ms-2 text-sm" style="font-size: 0.78rem; font-weight: normal; color: var(--ink-soft);">
+                                        (<a href="{{ route('settings.business-profile.edit') }}" class="auth-link">prefilled from Settings</a>)
+                                    </span>
+                                @endif
                             </h2>
                             <div class="row g-3">
                                 <div class="col-12">
@@ -167,6 +206,12 @@
                                            class="form-control">
                                     <div class="form-text" id="logoFileHint">
                                         Will appear on the invoice preview and PDF.
+                                        @if ($authed && $defaultLogo)
+                                            <span class="d-block mt-1">
+                                                <i class="bi bi-info-circle me-1"></i>
+                                                Your saved business logo is preloaded — upload a different one to override just for this invoice.
+                                            </span>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -221,9 +266,7 @@
                                     </div>
                                 </div>
 
-                                {{-- Hidden guest-style client fields: not needed for authed users because
-                                     client is a FK relation. Kept ONLY so PDF legacy download route also
-                                     works with the same blade for quick previews. --}}
+                                {{-- Hidden guest-style client fields: not needed for authed users --}}
                                 <input type="hidden" name="client_name" value="">
                                 <input type="hidden" name="client_email" value="">
                                 <input type="hidden" name="client_phone" value="">
@@ -326,6 +369,11 @@
                                 <h2 class="mb-0" style="font-size: 1.125rem;">
                                     <i class="bi bi-list-check me-2" style="color: var(--saffron-dark);"></i>
                                     Items
+                                    @if ($authed && $productsJson->count() > 0)
+                                        <span class="ms-2 text-sm" style="font-size: 0.78rem; font-weight: normal; color: var(--ink-soft);">
+                                            — use the <strong>Pick a service</strong> dropdown to fill rows quickly.
+                                        </span>
+                                    @endif
                                 </h2>
                                 <button type="button" id="addItemBtn" class="btn btn-outline-ink btn-sm">
                                     <i class="bi bi-plus-lg"></i>
@@ -333,12 +381,23 @@
                                 </button>
                             </div>
 
+                            {{-- Hidden: service data available for JS (only when authed) --}}
+                            @if ($authed)
+                                <script id="servicesData" type="application/json">@json($productsJson)</script>
+                            @endif
+
                             <div class="table-responsive">
                                 <table class="table align-middle mb-0" id="itemsTable">
                                     <thead>
                                         <tr style="font-size: 0.8125rem; color: var(--ink-soft);">
-                                            <th style="width: 42%;">Description</th>
-                                            <th style="width: 14%;">Qty</th>
+                                            <th style="width: 42%;">Description
+                                                @if ($authed && $productsJson->count() > 0)
+                                                    <div style="font-size: 0.75rem; font-weight: normal; color: var(--sage); margin-top: 2px;">
+                                                        Pick a saved service ↓
+                                                    </div>
+                                                @endif
+                                            </th>
+                                            <th style="width: 10%;">Qty</th>
                                             <th style="width: 18%;">Price</th>
                                             <th style="width: 18%;">Line total</th>
                                             <th style="width: 8%;"></th>
@@ -348,6 +407,22 @@
                                         @foreach ($oldItems as $idx => $row)
                                             <tr class="item-row" data-index="{{ $idx }}">
                                                 <td>
+                                                    @if ($authed && $productsJson->count() > 0)
+                                                        <div class="mb-2">
+                                                            <select class="form-select form-select-sm item-service"
+                                                                    data-row-index="{{ $idx }}"
+                                                                    aria-label="Pick a saved service for this row">
+                                                                <option value="">— Pick a saved service (optional) —</option>
+                                                                @foreach ($productsJson as $svc)
+                                                                    <option value="{{ $svc['id'] }}"
+                                                                            data-description="{{ e($svc['description']) }}"
+                                                                            data-price="{{ e($svc['price']) }}">
+                                                                        {{ $svc['name'] }} — ${{ $svc['price'] }}
+                                                                    </option>
+                                                                @endforeach
+                                                            </select>
+                                                        </div>
+                                                    @endif
                                                     <input type="text" name="items[{{ $idx }}][description]"
                                                            class="form-control item-description"
                                                            placeholder="Website design"
@@ -443,37 +518,32 @@
                         </div>
                     </div>
 
-                    {{-- Action buttons: Save + PDF (authed) or PDF only (guest) -------- --}}
+                    {{-- Action buttons: Save (authed) or "Sign up to save" (guest) --- --}}
                     <div class="row g-3">
                         @if ($authed)
-                            <div class="col-md-6">
+                            <div class="col-12">
                                 <button type="submit"
                                         class="btn btn-saffron btn-lg w-100 justify-content-center">
                                     <i class="bi bi-check2"></i>
                                     {{ $editing ? 'Update invoice' : 'Save invoice' }}
                                 </button>
-                            </div>
-                            <div class="col-md-6">
-                                <button type="submit"
-                                        id="downloadBtn"
-                                        name="action"
-                                        value="pdf"
-                                        class="btn btn-ink btn-lg w-100 justify-content-center"
-                                        formtarget="_blank"
-                                        formaction="{{ $editing
-                                            ? route('invoices.update', ['invoice' => $invoice, 'action' => 'pdf'])
-                                            : route('invoices.store', ['action' => 'pdf']) }}"
-                                        formmethod="POST">
-                                    <i class="bi bi-filetype-pdf"></i>
-                                    Save &amp; Download PDF
-                                </button>
+                                <div class="form-text mt-2 text-center">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    After saving you'll be able to
+                                    <a href="{{ route('invoices.index') }}" class="auth-link">download the PDF</a>
+                                    from the invoice view.
+                                </div>
                             </div>
                         @else
                             <div class="col-12">
-                                <button type="submit" id="downloadBtn" class="btn btn-saffron btn-lg w-100 justify-content-center">
-                                    <i class="bi bi-filetype-pdf"></i>
-                                    Download PDF
-                                </button>
+                                <a href="{{ route('register') }}" class="btn btn-saffron btn-lg w-100 justify-content-center">
+                                    <i class="bi bi-person-plus me-1"></i>
+                                    Create account to save &amp; download PDF
+                                </a>
+                                <div class="form-text mt-2 text-center">
+                                    Already have an account?
+                                    <a href="{{ route('login') }}" class="auth-link">Sign in</a>
+                                </div>
                             </div>
                         @endif
                     </div>
@@ -512,8 +582,10 @@
                         {{-- PREVIEW HEADER: LOGO + BUSINESS | INVOICE META --}}
                         <div class="row mb-4">
                             <div class="col-7">
-                                <div id="p_business_logo" class="mb-2" style="max-height: 60px; display: none;">
-                                    <img id="p_logo_img" alt="Business logo" style="max-height: 60px; max-width: 180px; display: block;">
+                                <div id="p_business_logo" class="mb-2" style="max-height: 60px; @if ($defaultLogo) display: block; @else display: none; @endif">
+                                    <img id="p_logo_img" alt="Business logo"
+                                         @if ($defaultLogo) src="{{ $defaultLogo }}" @endif
+                                         style="max-height: 60px; max-width: 180px; display: block;">
                                 </div>
                                 <div id="p_business_name" class="fw-bold mb-1" style="font-family: 'Fraunces', Georgia, serif; font-size: 1.125rem; color: var(--ink);">Your business name</div>
                                 <div id="p_business_email" class="mb-1" style="color: var(--ink-soft); font-size: 0.8125rem;"></div>

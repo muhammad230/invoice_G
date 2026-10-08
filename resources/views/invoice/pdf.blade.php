@@ -78,6 +78,34 @@
         font-weight: normal;
     }
 
+    /* --- Status pill (top-right, floated) ---------------------------- */
+    .status-pill {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 10px;
+    }
+    .status-paid {
+        background: #E6F2EC;
+        color: #3F6B50;
+    }
+    .status-pending {
+        background: #FBF0D8;
+        color: #B3832F;
+    }
+    .status-overdue {
+        background: #FBE4E2;
+        color: #B3372F;
+    }
+    .status-draft {
+        background: #F1EEE8;
+        color: #4A5866;
+    }
+
     /* --- Bill to block ------------------------------------------------- */
     .bill-to {
         width: 100%;
@@ -202,9 +230,15 @@
 <table class="header" cellpadding="0" cellspacing="0" style="width:100%;">
 <tr>
     <td style="width:55%; vertical-align: top;">
-        {{-- Logo (optional) --}}
-        @if (!empty($logo_data))
-            <img src="{{ $logo_data }}" class="business-logo" alt="Logo">
+        {{-- Logo (optional, from invoice OR BusinessProfile, via base64) --}}
+        @php
+            $logoOk = false;
+            if (!empty($logo_data) && is_string($logo_data) && str_starts_with(trim($logo_data), 'data:image/')) {
+                $logoOk = true;
+            }
+        @endphp
+        @if ($logoOk)
+            <img src="{{ $logo_data }}" class="business-logo" alt="Business logo">
         @endif
         <div class="business-name">{{ $business_name }}</div>
         @if (!empty($business_email))
@@ -216,9 +250,33 @@
         @if (!empty($business_address))
             <div class="business-sub">{{ nl2br(e($business_address)) }}</div>
         @endif
+        @if (!empty($business_tax))
+            <div class="business-sub">Tax / VAT: {{ $business_tax }}</div>
+        @endif
     </td>
     <td style="width:45%; vertical-align: top; text-align: right;">
         <div class="invoice-title">Invoice</div>
+
+        {{-- Status pill (derived, not stored directly in DB) --}}
+        @if (!empty($status))
+            @php
+                $statusClass = match($status) {
+                    'paid'    => 'status-paid',
+                    'pending' => 'status-pending',
+                    'overdue' => 'status-overdue',
+                    'draft'   => 'status-draft',
+                    default   => 'status-draft',
+                };
+                $statusLabel = match($status) {
+                    'paid'    => 'Paid',
+                    'pending' => 'Pending',
+                    'overdue' => 'Overdue',
+                    'draft'   => 'Draft',
+                    default   => ucfirst($status),
+                };
+            @endphp
+            <span class="status-pill {{ $statusClass }}">{{ $statusLabel }}</span>
+        @endif
 
         <div class="meta-row">
             <div class="meta-label">Invoice #</div>

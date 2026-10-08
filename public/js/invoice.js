@@ -6,7 +6,8 @@
    2. MATH         → line totals, subtotal, tax, discount, grand total
                      (uses integer-cents internally to avoid float drift).
    3. FORM HELPERS → Add/remove item rows (keep at least 1), logo upload,
-                     currency-symbol selection, date formatting.
+                     currency-symbol selection, date formatting,
+                     SERVICE DROPDOWN → fill description + price from saved svc.
    4. SUBMIT       → ensure the form POSTs correctly; any server-side
                      validation errors are shown by Blade on re-render.
    ========================================================================== */
@@ -119,6 +120,17 @@
         var pTotal       = $('p_total');
         var pNotes       = $('p_notes');
         var pNotesPH     = $('p_notes_placeholder');
+
+        // -- Services: load saved products from the JSON <script> tag --------
+        var SERVICE_OPTIONS = [];
+        try {
+            var tag = document.getElementById('servicesData');
+            if (tag && tag.textContent) {
+                SERVICE_OPTIONS = JSON.parse(tag.textContent) || [];
+            }
+        } catch (e) {
+            SERVICE_OPTIONS = [];
+        }
 
         // -- Empty-field placeholders (matches the design request) ----------
         var PLACEHOLDER = {
@@ -314,6 +326,7 @@
 
         // =====================================================================
         // ADD / REMOVE item rows
+        // Includes service dropdown when saved services are available.
         // =====================================================================
         function getNextIndex() {
             var rows = itemsBody.querySelectorAll('.item-row');
@@ -326,6 +339,31 @@
             return max + 1;
         }
 
+        function buildServiceDropdownMarkup(idx) {
+            if (!SERVICE_OPTIONS.length) return '';
+            var opts = '';
+            SERVICE_OPTIONS.forEach(function (svc) {
+                var safeName = escapeHtml(svc.name + ' — $' + svc.price);
+                var safeDesc = escapeHtml(svc.description || '');
+                var safePrice = escapeHtml(String(svc.price));
+                opts += '<option value="' + svc.id + '"' +
+                            ' data-description="' + safeDesc + '"' +
+                            ' data-price="' + safePrice + '">' +
+                            safeName +
+                        '</option>';
+            });
+            return (
+                '<div class="mb-2">' +
+                    '<select class="form-select form-select-sm item-service" ' +
+                            'data-row-index="' + idx + '" ' +
+                            'aria-label="Pick a saved service for this row">' +
+                        '<option value="">— Pick a saved service (optional) —</option>' +
+                        opts +
+                    '</select>' +
+                '</div>'
+            );
+        }
+
         function addItemRow() {
             var idx = getNextIndex();
             var tr = document.createElement('tr');
@@ -333,6 +371,7 @@
             tr.setAttribute('data-index', idx);
             tr.innerHTML =
                 '<td>' +
+                    buildServiceDropdownMarkup(idx) +
                     '<input type="text" name="items[' + idx + '][description]" ' +
                            'class="form-control item-description" ' +
                            'placeholder="Website design">' +
@@ -384,6 +423,57 @@
                     updateTextPreview();
                 }
             });
+
+            // -----------------------------------------------------------------
+            // SERVICE DROPDOWN HANDLER (event delegation → any row)
+            // On change → fill description + price, reset the dropdown to
+            // "Pick a service…" so user can pick another next time if needed.
+            // -----------------------------------------------------------------
+            itemsBody.addEventListener('change', function (e) {
+                var sel = e.target.closest('.item-service');
+                if (!sel) return;
+
+                var val = sel.value;
+                if (!val) return;
+
+                var opt = sel.options[sel.selectedIndex];
+                if (!opt) return;
+
+                var row = sel.closest('.item-row');
+                if (!row) return;
+
+                var description = opt.getAttribute('data-description') || '';
+                var price       = opt.getAttribute('data-price') || '';
+
+                // Fill description if empty. If user already typed something,
+                // concatenate (or replace if only whitespace).
+                var descInput = row.querySelector('.item-description');
+                if (descInput) {
+                    var current = (descInput.value || '').trim();
+                    if (current === '') {
+                        // Prefer name + description, fallback to option text.
+                        var fallback = opt.textContent.split(' — ')[0] || '';
+                        descInput.value = description ? description : fallback;
+                    }
+                }
+
+                // Fill price if empty.
+                var priceInput = row.querySelector('.item-price');
+                if (priceInput) {
+                    var currPrice = (priceInput.value || '').trim();
+                    if (currPrice === '' || parsePositiveNumber(currPrice) === 0) {
+                        priceInput.value = price;
+                    }
+                }
+
+                // Reset to "— Pick a saved service —" so row looks clean.
+                // User can pick again if they want; dropdown doesn't need to
+                // remember selection because fields were filled.
+                sel.value = '';
+
+                recalculate();
+                updateTextPreview();
+            });
         }
 
         if (addItemBtn) {
@@ -398,17 +488,17 @@
         // =====================================================================
         // LOGO UPLOAD (optional)
         // Reads the chosen file as a data URL and:
-        //   a) stores it in the hidden logoData input for the PDF POST,
+        //   a) stores it in the hidden logoData input for the form POST,
         //   b) updates the live-preview logo <img> element.
+        // If the page already has a default logo (from BusinessProfile), the
+        // user can still upload a per-invoice override (or clear to default).
         // =====================================================================
         if (logoFileInput && logoDataInput && pLogoImg) {
             logoFileInput.addEventListener('change', function () {
                 var file = logoFileInput.files && logoFileInput.files[0];
                 if (!file) {
-                    // Clear
-                    logoDataInput.value = '';
-                    pLogoImg.removeAttribute('src');
-                    pLogoWrap.style.display = 'none';
+                    // No file chosen → keep whatever logo is currently stored
+                    // (BusinessProfile default set via logoDataInput on page load)
                     return;
                 }
                 if (!/^image\//.test(file.type)) {
@@ -441,6 +531,20 @@
                 currencySel.addEventListener('change', function () {
                     recalculate();
                     updateTextPreview();
+                });
+            }
+
+            // Client dropdown (when authed) → populate preview "Bill to" block
+            var clientSel = $('client_id');
+            if (clientSel) {
+                clientSel.addEventListener('change', function () {
+                    var opt = clientSel.options[clientSel.selectedIndex];
+                    if (opt) {
+                        var name  = opt.getAttribute('data-name')  || opt.textContent.split('<')[0].trim();
+                        var email = opt.getAttribute('data-email') || '';
+                        if (pClientName) pClientName.textContent = name || PLACEHOLDER.clientName;
+                        if (pClientEmail) setOptionalText(pClientEmail, email);
+                    }
                 });
             }
         }

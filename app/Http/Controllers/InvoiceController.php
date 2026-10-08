@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateInvoiceRequest;
 use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\Product;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,10 +20,9 @@ class InvoiceController extends Controller
 {
     public function __construct()
     {
-        // Auth required for all actions except the legacy download route
-        // (which still validates the request body — kept for backward compat
-        // with the unauthenticated demo form).
-        $this->middleware('auth')->except(['downloadLegacy']);
+        // Auth required for all persistence + PDF routes. Guests can still
+        // reach /invoice/create for the demo form on the landing page.
+        $this->middleware('auth')->except(['create']);
     }
 
     /**
@@ -121,14 +121,48 @@ class InvoiceController extends Controller
     }
 
     /**
-     * GET /invoices/create — invoice builder (w/ client dropdown).
+     * GET /invoice/create OR GET /invoices/create
+     * - Guests: legacy demo form (just to avoid broken landing-page links).
+     * - Authed: builder with business profile prefill + client/service dropdowns.
      */
     public function create(): View
     {
+        if (!Auth()->check()) {
+            // Guest preview — no profile prefill, no saved clients/services.
+            $currencies = $this->currencies();
+            $defaults = [
+                'invoice_number' => 'INV-001',
+                'invoice_date'   => Date::today()->format('Y-m-d'),
+                'due_date'       => Date::today()->addDays(30)->format('Y-m-d'),
+                'currency'       => 'USD',
+                'tax'            => '0',
+                'discount'       => '0',
+                'status'         => Invoice::STATUS_PENDING,
+            ];
+            $clients   = collect();
+            $products  = collect();
+            $businessDefaults = [
+                'business_name'    => '',
+                'business_email'   => '',
+                'business_phone'   => '',
+                'business_address' => '',
+                'logo_default'     => null,
+            ];
+            $invoice    = null;
+            $oldItems   = [];
+
+            return view('invoice.create', array_merge(
+                compact('currencies', 'clients', 'products', 'defaults', 'invoice', 'oldItems'),
+                $businessDefaults
+            ));
+        }
+
         $user = auth()->user();
+        $user->load('businessProfile');
 
         $currencies = $this->currencies();
         $clients    = Client::where('user_id', $user->id)->orderBy('name')->get(['id', 'name', 'email']);
+        $products   = Product::where('user_id', $user->id)->orderBy('name')->get(['id', 'name', 'description', 'price']);
 
         $defaults = [
             'invoice_number' => $user->nextInvoiceNumber(),
@@ -140,15 +174,22 @@ class InvoiceController extends Controller
             'status'         => Invoice::STATUS_PENDING,
         ];
 
+        // Prefill "Your business" block from BusinessProfile.
+        $profile = $user->businessProfile;
+        $businessDefaults = [
+            'business_name'    => $profile?->business_name ?? $user->name,
+            'business_email'   => $profile?->email         ?? $user->email,
+            'business_phone'   => $profile?->phone         ?? '',
+            'business_address' => $profile?->address       ?? '',
+            'logo_default'     => $profile?->logo_base64   ?? null,
+        ];
+
         $invoice = null;
         $oldItems = [];
 
-        return view('invoice.create', compact(
-            'currencies',
-            'clients',
-            'defaults',
-            'invoice',
-            'oldItems'
+        return view('invoice.create', array_merge(
+            compact('currencies', 'clients', 'products', 'defaults', 'invoice', 'oldItems'),
+            $businessDefaults
         ));
     }
 
@@ -210,10 +251,6 @@ class InvoiceController extends Controller
 
         session()->flash('success', "Invoice <strong>{$invoice->invoice_number}</strong> saved.");
 
-        if ((string) $request->query('action', '') === 'pdf' || (string) $request->input('action', '') === 'pdf') {
-            return $this->download($invoice);
-        }
-
         return redirect()->route('invoices.show', $invoice);
     }
 
@@ -237,8 +274,11 @@ class InvoiceController extends Controller
         $invoice->load(['client', 'items']);
 
         $user = auth()->user();
+        $user->load('businessProfile');
+
         $currencies = $this->currencies();
         $clients    = Client::where('user_id', $user->id)->orderBy('name')->get(['id', 'name', 'email']);
+        $products   = Product::where('user_id', $user->id)->orderBy('name')->get(['id', 'name', 'description', 'price']);
 
         $defaults = [
             'invoice_number' => $invoice->invoice_number,
@@ -258,12 +298,21 @@ class InvoiceController extends Controller
             ];
         })->all();
 
-        return view('invoice.create', compact(
-            'currencies',
-            'clients',
-            'defaults',
-            'invoice',
-            'oldItems'
+        // Edit mode keeps any business info that was explicitly written onto
+        // the invoice. If the invoice has NO business info saved (e.g. legacy)
+        // fall back to the BusinessProfile defaults so the user sees something.
+        $profile = $user->businessProfile;
+        $businessDefaults = [
+            'business_name'    => $invoice->business_name    ?? ($profile?->business_name ?? $user->name),
+            'business_email'   => $invoice->business_email   ?? ($profile?->email         ?? $user->email),
+            'business_phone'   => $invoice->business_phone   ?? ($profile?->phone         ?? ''),
+            'business_address' => $invoice->business_address ?? ($profile?->address       ?? ''),
+            'logo_default'     => $invoice->logo_data        ?? ($profile?->logo_base64   ?? null),
+        ];
+
+        return view('invoice.create', array_merge(
+            compact('currencies', 'clients', 'products', 'defaults', 'invoice', 'oldItems'),
+            $businessDefaults
         ));
     }
 
@@ -325,10 +374,6 @@ class InvoiceController extends Controller
 
         session()->flash('success', "Invoice <strong>{$invoice->invoice_number}</strong> updated.");
 
-        if ((string) $request->query('action', '') === 'pdf' || (string) $request->input('action', '') === 'pdf') {
-            return $this->download($invoice);
-        }
-
         return redirect()->route('invoices.show', $invoice);
     }
 
@@ -361,17 +406,81 @@ class InvoiceController extends Controller
         return redirect()->route('invoices.show', $invoice);
     }
 
+    /**
+     * POST /invoices/{invoice}/duplicate — copy an invoice.
+     * New invoice number (next sequential), invoice_date = today,
+     * due_date = today + 30 days, status = draft.
+     */
+    public function duplicate(Invoice $invoice): RedirectResponse
+    {
+        $this->authorize('create', Invoice::class);
+        $this->authorize('view', $invoice);
+
+        $invoice->load(['items']);
+        $user = auth()->user();
+
+        DB::beginTransaction();
+        try {
+            /** @var Invoice $copy */
+            $copy = Invoice::create([
+                'user_id'          => $user->id,
+                'client_id'        => $invoice->client_id,
+                'invoice_number'   => $user->nextInvoiceNumber(),
+                'invoice_date'     => Date::today(),
+                'due_date'         => Date::today()->addDays(30),
+                'currency'         => $invoice->currency,
+                'status'           => Invoice::STATUS_DRAFT,
+                'subtotal'         => $invoice->subtotal,
+                'tax_percent'      => $invoice->tax_percent,
+                'tax_amount'       => $invoice->tax_amount,
+                'discount'         => $invoice->discount,
+                'total'            => $invoice->total,
+                'business_name'    => $invoice->business_name,
+                'business_email'   => $invoice->business_email,
+                'business_phone'   => $invoice->business_phone,
+                'business_address' => $invoice->business_address,
+                'logo_data'        => $invoice->logo_data,
+                'notes'            => $invoice->notes,
+            ]);
+
+            $now = Date::now();
+            $itemRows = $invoice->items->map(function (InvoiceItem $i) use ($copy, $now) {
+                return [
+                    'invoice_id'  => $copy->id,
+                    'description' => $i->description,
+                    'quantity'    => $i->quantity,
+                    'price'       => $i->price,
+                    'total'       => $i->total,
+                    'created_at'  => $now,
+                    'updated_at'  => $now,
+                ];
+            })->all();
+
+            DB::table('invoice_items')->insert($itemRows);
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        }
+
+        session()->flash('success', "Invoice <strong>{$copy->invoice_number}</strong> created as a copy.");
+
+        return redirect()->route('invoices.edit', $copy);
+    }
+
     // ------------------------------------------------------------------
-    // PDF download / streaming (DB + legacy)
+    // PDF streaming (authenticated persisted invoices only)
     // ------------------------------------------------------------------
 
     /**
-     * GET  /invoices/{invoice}/download — stream PDF from a persisted invoice.
+     * GET /invoices/{invoice}/pdf — stream PDF from a persisted invoice.
+     * InvoicePolicy@view gates access; falls back to user's BusinessProfile
+     * for logo / business info when the invoice has none stored.
      */
     public function download(Invoice $invoice): StreamedResponse
     {
         $this->authorize('view', $invoice);
-        $invoice->load(['client', 'items']);
+        $invoice->load(['client', 'items', 'user.businessProfile']);
 
         $currencyInfo = Invoice::currencies()[$invoice->currency]
             ?? Invoice::currencies()['USD'];
@@ -393,11 +502,14 @@ class InvoiceController extends Controller
             'total'    => $invoice->total / 100,
         ];
 
+        $profile = $invoice->user?->businessProfile;
+
         $viewData = [
-            'business_name'    => $invoice->business_name,
-            'business_email'   => $invoice->business_email,
-            'business_phone'   => $invoice->business_phone,
-            'business_address' => $invoice->business_address,
+            'business_name'    => $invoice->business_name    ?? ($profile?->business_name ?? $invoice->user?->name ?? 'Your business'),
+            'business_email'   => $invoice->business_email   ?? ($profile?->email         ?? null),
+            'business_phone'   => $invoice->business_phone   ?? ($profile?->phone         ?? null),
+            'business_address' => $invoice->business_address ?? ($profile?->address       ?? null),
+            'business_tax'     => $profile?->tax_number,
             'client_name'      => optional($invoice->client)->name ?? '—',
             'client_email'     => optional($invoice->client)->email,
             'client_phone'     => optional($invoice->client)->phone,
@@ -405,85 +517,18 @@ class InvoiceController extends Controller
             'invoice_number'   => $invoice->invoice_number,
             'invoice_date'     => $invoice->invoice_date->format('M j, Y'),
             'due_date'         => optional($invoice->due_date)?->format('M j, Y'),
+            'status'           => $invoice->display_status,
             'currency'         => $invoice->currency,
             'currency_symbol'  => $currencyInfo['symbol'],
             'items'            => $itemsForView,
             'totals'           => $totals,
             'notes'            => $invoice->notes,
-            'logo_data'        => $invoice->logo_data,
+            'logo_data'        => $invoice->logo_data ?? ($profile?->logo_base64 ?? null),
         ];
 
         $pdf = Pdf::loadView('invoice.pdf', $viewData)->setPaper('a4', 'portrait');
 
         $safeNumber = preg_replace('/[^\w\-]/', '-', $invoice->invoice_number) ?: 'invoice';
-
-        return $pdf->stream("invoice-{$safeNumber}.pdf");
-    }
-
-    /**
-     * POST /invoice/download — legacy unauthenticated PDF route.
-     * Kept as `downloadLegacy` so it can still be reached from the
-     * "Get started free" demo invoice builder on the home page.
-     */
-    public function downloadLegacy(Request $request): StreamedResponse
-    {
-        $validated = $request->validate([
-            'business_name'    => 'required|string|max:255',
-            'business_email'   => 'nullable|email|max:255',
-            'business_phone'   => 'nullable|string|max:50',
-            'business_address' => 'nullable|string|max:500',
-            'client_name'      => 'required|string|max:255',
-            'client_email'     => 'nullable|email|max:255',
-            'client_phone'     => 'nullable|string|max:50',
-            'client_address'   => 'nullable|string|max:500',
-            'invoice_number'   => 'required|string|max:50',
-            'invoice_date'     => 'required|date',
-            'due_date'         => 'nullable|date|after_or_equal:invoice_date',
-            'currency'         => 'required|string|in:USD,PKR,EUR,GBP',
-            'items'            => 'required|array|min:1',
-            'items.*.description' => 'required|string|max:255',
-            'items.*.quantity'    => 'required|integer|min:1',
-            'items.*.price'       => 'required|numeric|min:0',
-            'tax'      => 'nullable|numeric|min:0|max:100',
-            'discount' => 'nullable|numeric|min:0',
-            'notes'    => 'nullable|string|max:1000',
-            'logo_data' => 'nullable|string',
-        ]);
-
-        $totals = $this->recalcTotals($validated);
-        $currencyInfo = Invoice::currencies()[$validated['currency']]
-            ?? Invoice::currencies()['USD'];
-
-        $itemsForView = [];
-        foreach ($totals['items'] as $row) {
-            $itemsForView[] = [
-                'description' => $row['description'],
-                'quantity'    => $row['quantity'],
-                'price'       => $row['price'] / 100,
-                'line_total'  => $row['total'] / 100,
-            ];
-        }
-
-        $viewData = array_merge($validated, [
-            'invoice_date'    => date('M j, Y', strtotime($validated['invoice_date'])),
-            'due_date'        => $validated['due_date']
-                ? date('M j, Y', strtotime($validated['due_date']))
-                : null,
-            'currency_symbol' => $currencyInfo['symbol'],
-            'items'           => $itemsForView,
-            'totals'          => [
-                'subtotal' => $totals['subtotal'] / 100,
-                'tax'      => $totals['tax_amount'] / 100,
-                'tax_pct'  => (float) $totals['tax_percent'],
-                'discount' => $totals['discount'] / 100,
-                'total'    => $totals['total'] / 100,
-            ],
-            'logo_data' => $validated['logo_data'] ?? null,
-        ]);
-
-        $pdf = Pdf::loadView('invoice.pdf', $viewData)->setPaper('a4', 'portrait');
-
-        $safeNumber = preg_replace('/[^\w\-]/', '-', $validated['invoice_number']) ?: 'invoice';
 
         return $pdf->stream("invoice-{$safeNumber}.pdf");
     }

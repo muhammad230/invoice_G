@@ -44,11 +44,21 @@
                     {{ $statusLabel }}
                 </span>
 
-                <a href="{{ route('invoices.download', $invoice) }}"
+                <a href="{{ route('invoices.pdf', $invoice) }}"
                    class="btn btn-saffron"
                    target="_blank" rel="noopener">
                     <i class="bi bi-filetype-pdf me-1"></i> Download PDF
                 </a>
+
+                <form method="POST"
+                      action="{{ route('invoices.duplicate', $invoice) }}"
+                      class="d-inline m-0"
+                      onsubmit="return confirm('Duplicate invoice {{ $invoice->invoice_number }}? A new invoice number will be generated.');">
+                    @csrf
+                    <button type="submit" class="btn btn-outline-ink">
+                        <i class="bi bi-files me-1"></i> Duplicate
+                    </button>
+                </form>
 
                 @if ($invoice->status !== \App\Models\Invoice::STATUS_PAID)
                     <form method="POST"

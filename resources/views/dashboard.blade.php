@@ -241,7 +241,7 @@
                                                        class="btn btn-sm btn-outline-ink">
                                                         <i class="bi bi-eye me-1"></i> View
                                                     </a>
-                                                    <a href="{{ route('invoices.download', $inv) }}"
+                                                    <a href="{{ route('invoices.pdf', $inv) }}"
                                                        target="_blank" rel="noopener"
                                                        class="btn btn-sm"
                                                        style="background: color-mix(in srgb, var(--saffron) 18%, #fff); color: var(--saffron-dark); border: 1px solid color-mix(in srgb, var(--saffron) 40%, #fff);">
