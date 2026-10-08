@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.dashboard')
 
 @section('title', (isset($mode) && $mode === 'edit' ? 'Edit client' : 'New client') . ' — InvoiceFlow')
 

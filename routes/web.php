@@ -50,6 +50,7 @@ Route::middleware('auth')->group(function () {
 
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/chart', [DashboardController::class, 'chart'])->name('dashboard.chart');
 
     // Clients resource
     Route::resource('clients', ClientController::class)->except(['show']);

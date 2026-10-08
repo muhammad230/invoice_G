@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends(Auth::check() ? 'layouts.dashboard' : 'layouts.app')
 
 @php
     $editing = isset($invoice) && $invoice !== null;
