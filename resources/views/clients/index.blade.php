@@ -19,8 +19,6 @@
             </a>
         </div>
 
-        @include('partials.alerts')
-
         @if ($clients->isEmpty())
             <div class="card dashboard-empty">
                 <div class="card-body text-center py-5">
@@ -41,20 +39,20 @@
         @else
             <div class="card" style="border-radius: var(--radius); border: none; box-shadow: var(--shadow-sm);">
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
+                    <table class="table table-hover align-middle mb-0 list-table">
                         <thead>
                             <tr style="font-size: 0.8125rem; color: var(--ink-soft); background: rgba(18,32,46,0.02);">
-                                <th scope="col" class="px-4 py-3">Client</th>
-                                <th scope="col" class="px-4 py-3">Email</th>
-                                <th scope="col" class="px-4 py-3">Phone</th>
-                                <th scope="col" class="px-4 py-3 text-center">Invoices</th>
-                                <th scope="col" class="px-4 py-3 text-end">Actions</th>
+                                <th scope="col">Client</th>
+                                <th scope="col">Email</th>
+                                <th scope="col">Phone</th>
+                                <th scope="col" class="text-center">Invoices</th>
+                                <th scope="col" class="text-end">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach ($clients as $client)
                                 <tr>
-                                    <td class="px-4 py-3">
+                                    <td>
                                         <div class="d-flex align-items-center gap-3">
                                             <div class="avatar-ring" style="width: 40px; height: 40px; font-size: 0.9rem;">
                                                 {{ strtoupper(mb_substr($client->name, 0, 1) ?? 'C') }}
@@ -62,14 +60,14 @@
                                             <div>
                                                 <div class="fw-semibold ink">{{ $client->name }}</div>
                                                 @if ($client->address)
-                                                    <div class="text-sm ink-soft" style="font-size: 0.8125rem;">
+                                                    <div class="ink-soft" style="font-size: 0.78rem;">
                                                         {{ Illuminate\Support\Str::limit($client->address, 48) }}
                                                     </div>
                                                 @endif
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-4 py-3">
+                                    <td>
                                         @if ($client->email)
                                             <a href="mailto:{{ $client->email }}" class="auth-link">
                                                 {{ $client->email }}
@@ -78,15 +76,15 @@
                                             <span class="text-muted" style="color: var(--ink-soft);">—</span>
                                         @endif
                                     </td>
-                                    <td class="px-4 py-3">
+                                    <td>
                                         {{ $client->phone ?: '—' }}
                                     </td>
-                                    <td class="px-4 py-3 text-center">
+                                    <td class="text-center">
                                         <span class="badge rounded-pill status-pending">
                                             {{ $client->invoices_count }}
                                         </span>
                                     </td>
-                                    <td class="px-4 py-3 text-end">
+                                    <td class="text-end">
                                         <div class="d-flex justify-content-end gap-2">
                                             <a href="{{ route('clients.edit', $client) }}"
                                                class="btn btn-sm btn-outline-ink">

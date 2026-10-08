@@ -22,14 +22,12 @@
             </a>
         </div>
 
-        @include('partials.alerts')
-
         {{-- Search bar ------------------------------------------------------ --}}
         <form method="GET" action="{{ route('products.index') }}" class="mb-4">
             <div class="card" style="border-radius: var(--radius); border: none; box-shadow: var(--shadow-sm);">
                 <div class="card-body p-3 p-lg-4">
-                    <div class="row g-3 align-items-end">
-                        <div class="col-12 col-md-10">
+                    <div class="d-flex flex-wrap gap-3 align-items-end">
+                        <div class="filter-field filter-field--search">
                             <label for="q" class="form-label">Search</label>
                             <div class="input-group input-group-lg">
                                 <span class="input-group-text" aria-hidden="true">
@@ -41,18 +39,16 @@
                                        placeholder="Search services by name or description…">
                             </div>
                         </div>
-                        <div class="col-12 col-md-2">
-                            <div class="d-flex gap-2">
-                                <button type="submit" class="btn btn-ink btn-lg w-100 justify-content-center">
-                                    <i class="bi bi-funnel me-1 d-none d-sm-inline"></i>
-                                    Search
-                                </button>
-                                <a href="{{ route('products.index') }}"
-                                   class="btn btn-outline-ink btn-lg justify-content-center"
-                                   title="Clear search">
-                                    <i class="bi bi-x-lg"></i>
-                                </a>
-                            </div>
+                        <div class="filter-actions">
+                            <button type="submit" class="btn btn-ink btn-lg justify-content-center">
+                                <i class="bi bi-funnel me-1 d-none d-sm-inline"></i>
+                                Search
+                            </button>
+                            <a href="{{ route('products.index') }}"
+                               class="btn btn-outline-ink btn-lg justify-content-center"
+                               title="Clear search">
+                                <i class="bi bi-x-lg"></i>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -79,18 +75,18 @@
         @else
             <div class="card" style="border-radius: var(--radius); border: none; box-shadow: var(--shadow-sm);">
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
+                    <table class="table table-hover align-middle mb-0 list-table">
                         <thead>
                             <tr style="font-size: 0.8125rem; color: var(--ink-soft); background: rgba(18,32,46,0.02);">
-                                <th scope="col" class="px-4 py-3">Service</th>
-                                <th scope="col" class="px-4 py-3 text-end">Default price</th>
-                                <th scope="col" class="px-4 py-3 text-end">Actions</th>
+                                <th scope="col">Service</th>
+                                <th scope="col" class="text-end">Default price</th>
+                                <th scope="col" class="text-end">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach ($products as $product)
                                 <tr>
-                                    <td class="px-4 py-3">
+                                    <td>
                                         <div class="fw-semibold ink">{{ $product->name }}</div>
                                         @if ($product->description)
                                             <div class="ink-soft" style="font-size: 0.875rem;">
@@ -98,10 +94,10 @@
                                             </div>
                                         @endif
                                     </td>
-                                    <td class="px-4 py-3 text-end fw-semibold" style="font-variant-numeric: tabular-nums;">
+                                    <td class="text-end fw-semibold" style="font-variant-numeric: tabular-nums;">
                                         ${{ $product->price_decimal }}
                                     </td>
-                                    <td class="px-4 py-3 text-end">
+                                    <td class="text-end">
                                         <div class="d-flex justify-content-end gap-2">
                                             <a href="{{ route('products.edit', $product) }}"
                                                class="btn btn-sm btn-outline-ink">

@@ -20,14 +20,12 @@
             </a>
         </div>
 
-        @include('partials.alerts')
-
         {{-- Search + filter bar ------------------------------------------- --}}
         <form method="GET" action="{{ route('invoices.index') }}" class="mb-4">
             <div class="card" style="border-radius: var(--radius); border: none; box-shadow: var(--shadow-sm);">
                 <div class="card-body p-3 p-lg-4">
-                    <div class="row g-3 align-items-end">
-                        <div class="col-12 col-md-6 col-lg-7">
+                    <div class="d-flex flex-wrap gap-3 align-items-end">
+                        <div class="filter-field filter-field--search">
                             <label for="q" class="form-label">Search</label>
                             <div class="input-group input-group-lg">
                                 <span class="input-group-text" aria-hidden="true">
@@ -39,7 +37,7 @@
                                        placeholder="Search by invoice # or client name…">
                             </div>
                         </div>
-                        <div class="col-8 col-md-4 col-lg-3">
+                        <div class="filter-field">
                             <label for="status" class="form-label">Status</label>
                             <select id="status" name="status" class="form-select form-select-lg">
                                 <option value="" @selected($filters['status'] === '')>All statuses</option>
@@ -49,18 +47,16 @@
                                 <option value="paid"    @selected($filters['status'] === 'paid')>Paid</option>
                             </select>
                         </div>
-                        <div class="col-4 col-md-2">
-                            <div class="d-flex gap-2">
-                                <button type="submit" class="btn btn-ink btn-lg w-100 justify-content-center">
-                                    <i class="bi bi-funnel me-1 d-none d-sm-inline"></i>
-                                    Filter
-                                </button>
-                                <a href="{{ route('invoices.index') }}"
-                                   class="btn btn-outline-ink btn-lg justify-content-center"
-                                   title="Clear filters">
-                                    <i class="bi bi-x-lg"></i>
-                                </a>
-                            </div>
+                        <div class="filter-actions">
+                            <button type="submit" class="btn btn-ink btn-lg justify-content-center">
+                                <i class="bi bi-funnel me-1 d-none d-sm-inline"></i>
+                                Filter
+                            </button>
+                            <a href="{{ route('invoices.index') }}"
+                               class="btn btn-outline-ink btn-lg justify-content-center"
+                               title="Clear filters">
+                                <i class="bi bi-x-lg"></i>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -88,16 +84,16 @@
         @else
             <div class="card" style="border-radius: var(--radius); border: none; box-shadow: var(--shadow-sm);">
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
+                    <table class="table table-hover align-middle mb-0 list-table">
                         <thead>
                             <tr style="font-size: 0.8125rem; color: var(--ink-soft); background: rgba(18,32,46,0.02);">
-                                <th scope="col" class="px-4 py-3">Invoice</th>
-                                <th scope="col" class="px-4 py-3">Client</th>
-                                <th scope="col" class="px-4 py-3">Date</th>
-                                <th scope="col" class="px-4 py-3">Due</th>
-                                <th scope="col" class="px-4 py-3 text-end">Total</th>
-                                <th scope="col" class="px-4 py-3">Status</th>
-                                <th scope="col" class="px-4 py-3 text-end">Actions</th>
+                                <th scope="col">Invoice</th>
+                                <th scope="col">Client</th>
+                                <th scope="col" class="d-none d-md-table-cell">Date</th>
+                                <th scope="col" class="d-none d-md-table-cell">Due</th>
+                                <th scope="col" class="text-end">Total</th>
+                                <th scope="col">Status</th>
+                                <th scope="col" class="text-end">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -119,54 +115,54 @@
                                     };
                                 @endphp
                                 <tr>
-                                    <td class="px-4 py-3">
+                                    <td>
                                         <a href="{{ route('invoices.show', $invoice) }}"
                                            class="fw-semibold ink text-decoration-none">
                                             {{ $invoice->invoice_number }}
                                         </a>
-                                        <div class="text-sm ink-soft" style="font-size: 0.78rem;">
+                                        <div class="ink-soft" style="font-size: 0.78rem;">
                                             {{ $invoice->items->count() }} item{{ $invoice->items->count() === 1 ? '' : 's' }}
                                         </div>
                                     </td>
-                                    <td class="px-4 py-3">
+                                    <td>
                                         <div class="fw-semibold">{{ optional($invoice->client)->name ?? '—' }}</div>
                                         @if (optional($invoice->client)->email)
-                                            <div class="text-sm ink-soft" style="font-size: 0.78rem;">
+                                            <div class="ink-soft" style="font-size: 0.78rem;">
                                                 {{ $invoice->client->email }}
                                             </div>
                                         @endif
                                     </td>
-                                    <td class="px-4 py-3 ink-soft">
+                                    <td class="d-none d-md-table-cell ink-soft">
                                         {{ $invoice->invoice_date->format('M j, Y') }}
                                     </td>
-                                    <td class="px-4 py-3 {{ $status === 'overdue' ? '' : 'ink-soft' }}">
+                                    <td class="d-none d-md-table-cell {{ $status === 'overdue' ? '' : 'ink-soft' }}">
                                         @if ($invoice->due_date)
                                             {{ $invoice->due_date->format('M j, Y') }}
                                         @else
                                             <span class="ink-soft">—</span>
                                         @endif
                                     </td>
-                                    <td class="px-4 py-3 text-end fw-semibold" style="font-variant-numeric: tabular-nums;">
+                                    <td class="text-end fw-semibold" style="font-variant-numeric: tabular-nums;">
                                         {{ $invoice->total_formatted }}
                                     </td>
-                                    <td class="px-4 py-3">
+                                    <td>
                                         <span class="badge rounded-pill {{ $statusBadgeClass }}">
                                             {{ $statusLabel }}
                                         </span>
                                     </td>
-                                    <td class="px-4 py-3 text-end">
+                                    <td class="text-end">
                                         <div class="d-flex justify-content-end gap-2 flex-wrap">
                                             <a href="{{ route('invoices.show', $invoice) }}"
                                                class="btn btn-sm btn-outline-ink"
                                                title="View invoice">
-                                                <i class="bi bi-eye me-1"></i> View
+                                                <i class="bi bi-eye"></i><span class="d-none d-sm-inline ms-1">View</span>
                                             </a>
                                             <a href="{{ route('invoices.pdf', $invoice) }}"
                                                class="btn btn-sm"
                                                style="background: color-mix(in srgb, var(--saffron) 18%, #fff); color: var(--saffron-dark); border: 1px solid color-mix(in srgb, var(--saffron) 40%, #fff);"
                                                target="_blank" rel="noopener"
                                                title="Download PDF">
-                                                <i class="bi bi-filetype-pdf me-1"></i> PDF
+                                                <i class="bi bi-filetype-pdf"></i><span class="d-none d-sm-inline ms-1">PDF</span>
                                             </a>
                                             <form method="POST"
                                                   action="{{ route('invoices.duplicate', $invoice) }}"
@@ -176,7 +172,7 @@
                                                 <button type="submit"
                                                         class="btn btn-sm btn-outline-ink"
                                                         title="Duplicate this invoice">
-                                                    <i class="bi bi-files me-1"></i> Copy
+                                                    <i class="bi bi-files"></i><span class="d-none d-sm-inline ms-1">Copy</span>
                                                 </button>
                                             </form>
                                         </div>

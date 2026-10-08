@@ -2164,3 +2164,54 @@ body.app-shell {
     font-size: 0.85rem;
     font-weight: 500;
 }
+
+/* ============================================================
+   List pages (invoices / clients / services)
+   ============================================================ */
+
+/* Form labels outside the auth pages (.auth-card has its own rule). */
+.form-label {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--ink);
+}
+
+/* Search + filter bar: fields size to their content and wrap instead of
+   using fractional grid columns (col-md-2 was too narrow for two lg
+   buttons and the buttons overflowed their column). */
+.filter-field {
+    flex: 0 1 200px;
+    min-width: 160px;
+}
+.filter-field--search {
+    flex: 1 1 260px;
+    min-width: 230px;
+}
+.filter-actions {
+    display: flex;
+    gap: 0.5rem;
+    width: 100%;
+}
+.filter-actions > .btn:first-child { flex: 1 1 auto; }
+
+@media (min-width: 768px) {
+    .filter-actions { width: auto; flex: 0 0 auto; }
+    .filter-actions > .btn:first-child { flex: 0 0 auto; }
+}
+
+/* Index tables: match the dashboard's compact type scale (cells were
+   inheriting the 1rem body size while every other table uses ~0.86–0.9rem). */
+.list-table {
+    font-size: 0.9rem;
+}
+.list-table th,
+.list-table td {
+    padding: 0.75rem 1rem;
+}
+
+@media (max-width: 767.98px) {
+    .list-table th,
+    .list-table td {
+        padding: 0.65rem 0.75rem;
+    }
+}
