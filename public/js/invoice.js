@@ -245,7 +245,7 @@
             if (!pItemsBody) return;
 
             var html = '';
-            itemSummaries.forEach(function (item) {
+            itemSummaries.forEach(function (item, idx) {
                 var desc = item.description || '<span style="color:rgba(74,88,102,0.4);font-style:italic;">Item description</span>';
                 var descCell = escapeHtml(desc, true);
                 if (item.details) {
@@ -254,6 +254,7 @@
                 }
                 html +=
                     '<tr style="border-bottom:1px solid rgba(18,32,46,0.06);">' +
+                        '<td style="text-align:center; padding:0.5rem 0.25rem; color:rgba(74,88,102,0.85);">' + (idx + 1) + '</td>' +
                         '<td style="text-align:left;  padding:0.5rem 0.25rem;">' + descCell + '</td>' +
                         '<td style="text-align:right; padding:0.5rem 0.25rem; font-variant-numeric:tabular-nums;">' + item.qty + '</td>' +
                         '<td style="text-align:right; padding:0.5rem 0.25rem; font-variant-numeric:tabular-nums;">' + formatMoney(item.price, currency) + '</td>' +
@@ -264,7 +265,7 @@
             // If there are somehow zero rows (shouldn't happen), show a hint.
             if (!itemSummaries.length) {
                 html =
-                    '<tr><td colspan="4" style="text-align:center; padding:1rem; color:rgba(74,88,102,0.4); font-style:italic;">' +
+                    '<tr><td colspan="5" style="text-align:center; padding:1rem; color:rgba(74,88,102,0.4); font-style:italic;">' +
                         'No items yet.' +
                     '</td></tr>';
             }

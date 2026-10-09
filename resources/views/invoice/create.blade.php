@@ -725,6 +725,7 @@
                             <table class="table table-sm mb-0" id="p_items_table" style="border-collapse: collapse; width: 100%;">
                                 <thead>
                                     <tr style="border-bottom: 1px solid rgba(18,32,46,0.12);">
+                                        <th scope="col" style="text-align: center; padding: 0.5rem 0.25rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft); width: 8%;">#</th>
                                         <th scope="col" style="text-align: left; padding: 0.5rem 0.25rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft);">Description</th>
                                         <th scope="col" style="text-align: right; padding: 0.5rem 0.25rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft); width: 14%;">Qty</th>
                                         <th scope="col" style="text-align: right; padding: 0.5rem 0.25rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft); width: 20%;">Price</th>
@@ -753,7 +754,7 @@
                                     <span id="p_discount" style="font-variant-numeric: tabular-nums;">0.00</span>
                                 </div>
                                 <div class="d-flex justify-content-between pt-2" style="border-top: 2px solid var(--ink);">
-                                    <strong style="font-family: 'Fraunces', Georgia, serif; font-size: 1.125rem;">Total</strong>
+                                    <strong style="font-family: 'Fraunces', Georgia, serif; font-size: 1.125rem;">Total Amount</strong>
                                     <strong id="p_total" style="font-family: 'Fraunces', Georgia, serif; font-size: 1.375rem; color: var(--ink); font-variant-numeric: tabular-nums;">0.00</strong>
                                 </div>
                             </div>

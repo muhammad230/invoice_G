@@ -143,6 +143,8 @@
         text-align: left;
     }
     .items thead th.num { text-align: right; }
+    .items thead th.idx { text-align: center; }
+    .items tbody td.idx { text-align: center; color: #4A5866; }
 
     .items tbody td {
         font-size: 12px;
@@ -413,7 +415,8 @@
     <table class="items" cellpadding="0" cellspacing="0">
         <thead>
         <tr>
-            <th style="width:48%;">Description</th>
+            <th class="idx" style="width:6%;">#</th>
+            <th style="width:42%;">Description</th>
             <th class="num" style="width:12%;">Qty</th>
             <th class="num" style="width:20%;">Price</th>
             <th class="num" style="width:20%;">Amount</th>
@@ -423,6 +426,7 @@
         @forelse ($items as $it)
             {{-- Zebra striping via loop index; rows avoid page breaks --}}
             <tr class="{{ $loop->index % 2 === 1 ? 'alt' : '' }}">
+                <td class="idx">{{ $loop->iteration }}</td>
                 <td>
                     {{ $it['description'] }}
                     @if (filled($it['details'] ?? null))
@@ -435,7 +439,7 @@
             </tr>
         @empty
             <tr>
-                <td colspan="4" class="items-empty">No items on this invoice.</td>
+                <td colspan="5" class="items-empty">No items on this invoice.</td>
             </tr>
         @endforelse
         </tbody>
@@ -472,7 +476,7 @@
                     </tr>
                 @endif
                 <tr class="total-row">
-                    <td class="t-label">Total</td>
+                    <td class="t-label">Total Amount</td>
                     <td class="t-value">{{ $money($totals['total']) }}</td>
                 </tr>
             </table>
