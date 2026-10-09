@@ -49,6 +49,7 @@
 
     /* Spacers (tables-only layout: use divs with height instead of margins) */
     .gap    { height: 10px; }
+    .gap-lg { height: 18px; }                              /* items → totals */
 
     /* ================= 2. Header band =================================
        Full-width navy block; saffron accent line directly beneath it. */
@@ -58,7 +59,7 @@
     .band-logo { max-height: 50px; max-width: 190px; display: block; margin-bottom: 8px; }
     .brand-name {
         color: #FFFFFF;
-        font-size: 17px;
+        font-size: 20px;
         font-weight: bold;
         line-height: 1.3;
     }
@@ -154,10 +155,12 @@
         border-bottom: 1px solid #E8E4DA;
     }
 
-    /* ================= 6. Totals box (right-aligned, ~45%) =========== */
+    /* ================= 6. Totals box (right side, 55% / 45%) ========= */
     .totals-outer { width: 100%; border-collapse: collapse; page-break-inside: avoid; }
+    .totals-spacer { width: 55%; }                         /* empty left cell */
+    .totals-cell   { width: 45%; vertical-align: top; }     /* totals live here */
     .totals {
-        width: 45%;
+        width: 100%;                                        /* fills the 45% cell */
         border-collapse: collapse;
         border: 1px solid #E8E4DA;
         page-break-inside: avoid;
@@ -243,17 +246,6 @@
 
     // Client name guard: controller may put an em-dash placeholder there.
     $hasClient = !empty($client_name) && trim($client_name) !== '—';
-
-    // Email + phone share one line in the info row and the footer (keeps
-    // both compact; either may be missing — empty values are omitted).
-    $clientLine = implode('  ·  ', array_filter([
-        trim((string) ($client_email ?? '')),
-        trim((string) ($client_phone ?? '')),
-    ]));
-    $businessLine = implode('  ·  ', array_filter([
-        trim((string) ($business_email ?? '')),
-        trim((string) ($business_phone ?? '')),
-    ]));
 @endphp
 
 {{--
@@ -277,7 +269,7 @@
     {{-- Right: wordmark + invoice number in saffron --}}
     <td class="band-right" style="width:40%;">
         <div class="wordmark">INVOICE</div>
-        <div class="band-number"># {{ $invoice_number }}</div>
+        <div class="band-number">{{ $invoice_number }}</div>
     </td>
 </tr>
 </table>
@@ -299,8 +291,12 @@
             @if ($hasClient)
                 <div class="val-strong">{{ $client_name }}</div>
             @endif
-            @if ($clientLine !== '')
-                <div class="val">{{ $clientLine }}</div>
+            {{-- Email and phone each on their own line; empty values skipped --}}
+            @if (!empty($client_email))
+                <div class="val">{{ $client_email }}</div>
+            @endif
+            @if (!empty($client_phone))
+                <div class="val">{{ $client_phone }}</div>
             @endif
             @if (!empty($client_address))
                 <div class="val">{{ $client_address }}</div>
@@ -311,8 +307,12 @@
         <td>
             <div class="lbl">From</div>
             <div class="val-strong">{{ $business_name }}</div>
-            @if ($businessLine !== '')
-                <div class="val">{{ $businessLine }}</div>
+            {{-- Email and phone each on their own line; empty values skipped --}}
+            @if (!empty($business_email))
+                <div class="val">{{ $business_email }}</div>
+            @endif
+            @if (!empty($business_phone))
+                <div class="val">{{ $business_phone }}</div>
             @endif
             @if (!empty($business_address))
                 <div class="val">{{ $business_address }}</div>
@@ -371,14 +371,22 @@
         </tbody>
     </table>
 
-    <div class="gap"></div>
+    {{-- 18px of breathing room between the items table and the totals box --}}
+    <div class="gap-lg"></div>
 
     {{-- ==================================================================
-         6. TOTALS — right-aligned ~45% box; saffron total row
+         6. TOTALS — 2-column layout: empty spacer (55%) | totals (45%).
+             The box's right edge therefore lines up with the Amount
+             column of the items table above (both end at the same
+             content edge).
          ================================================================== --}}
     <table class="totals-outer" cellpadding="0" cellspacing="0">
     <tr>
-        <td align="right">
+        {{-- Left cell: intentionally empty, pushes the box to the right --}}
+        <td class="totals-spacer"></td>
+
+        {{-- Right cell: Subtotal / Tax / Discount / Total rows --}}
+        <td class="totals-cell">
             <table class="totals" cellpadding="0" cellspacing="0">
                 <tr>
                     <td class="t-label">Subtotal</td>
@@ -425,8 +433,12 @@
          ================================================================== --}}
     <div class="footer">
         <div class="thanks">Thank you for your business</div>
-        @if ($businessLine !== '')
-            <div>{{ $businessLine }}</div>
+        {{-- Contact lines: email and phone each on their own line --}}
+        @if (!empty($business_email))
+            <div>{{ $business_email }}</div>
+        @endif
+        @if (!empty($business_phone))
+            <div>{{ $business_phone }}</div>
         @endif
     </div>
 
