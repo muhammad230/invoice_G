@@ -92,6 +92,23 @@
                                     @enderror
                                 </div>
 
+                                <div class="col-12">
+                                    <label for="tagline" class="form-label">Tagline</label>
+                                    <input type="text" id="tagline" name="tagline"
+                                           class="form-control @error('tagline') is-invalid @enderror"
+                                           placeholder="e.g. Design that converts"
+                                           value="{{ old('tagline', $profile->tagline ?? '') }}"
+                                           maxlength="150">
+                                    <div class="form-text mt-1">
+                                        Short line shown under your business name on the invoice PDF.
+                                    </div>
+                                    @error('tagline')
+                                        <div class="invalid-feedback">
+                                            <i class="bi bi-exclamation-circle me-1"></i> {{ $message }}
+                                        </div>
+                                    @enderror
+                                </div>
+
                                 <div class="col-md-6">
                                     <label for="email" class="form-label">Email</label>
                                     <input type="email" id="email" name="email"
@@ -156,6 +173,121 @@
                                               placeholder="123 Main Street, City, Country"
                                               maxlength="500">{{ old('address', $profile->address ?? '') }}</textarea>
                                     @error('address')
+                                        <div class="invalid-feedback">
+                                            <i class="bi bi-exclamation-circle me-1"></i> {{ $message }}
+                                        </div>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Payment details & signature ---------------------------------- --}}
+                    <div class="card mb-4"
+                         style="border-radius: var(--radius); border: none; box-shadow: var(--shadow-sm);">
+                        <div class="card-body p-4 p-lg-5">
+                            <h2 class="mb-1" style="font-size: 1.25rem;">
+                                <i class="bi bi-bank me-2" style="color: var(--saffron);"></i>
+                                Payment details &amp; signature
+                            </h2>
+                            <p class="ink-soft mb-4" style="font-size: 0.9rem;">
+                                Shown in the &ldquo;Payment details&rdquo; section and signature
+                                block of every invoice PDF. Leave blank to hide a field.
+                            </p>
+
+                            <div class="row g-3 g-lg-4">
+                                <div class="col-md-6">
+                                    <label for="bank_name" class="form-label">Bank name</label>
+                                    <input type="text" id="bank_name" name="bank_name"
+                                           class="form-control @error('bank_name') is-invalid @enderror"
+                                           placeholder="e.g. Chase Bank"
+                                           value="{{ old('bank_name', $profile->bank_name ?? '') }}"
+                                           maxlength="150">
+                                    @error('bank_name')
+                                        <div class="invalid-feedback">
+                                            <i class="bi bi-exclamation-circle me-1"></i> {{ $message }}
+                                        </div>
+                                    @enderror
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="account_title" class="form-label">Account title</label>
+                                    <input type="text" id="account_title" name="account_title"
+                                           class="form-control @error('account_title') is-invalid @enderror"
+                                           placeholder="e.g. Your Studio Inc."
+                                           value="{{ old('account_title', $profile->account_title ?? '') }}"
+                                           maxlength="150">
+                                    @error('account_title')
+                                        <div class="invalid-feedback">
+                                            <i class="bi bi-exclamation-circle me-1"></i> {{ $message }}
+                                        </div>
+                                    @enderror
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="account_number" class="form-label">Account number</label>
+                                    <input type="text" id="account_number" name="account_number"
+                                           class="form-control @error('account_number') is-invalid @enderror"
+                                           placeholder="e.g. 0001 2345 6789"
+                                           value="{{ old('account_number', $profile->account_number ?? '') }}"
+                                           maxlength="50">
+                                    @error('account_number')
+                                        <div class="invalid-feedback">
+                                            <i class="bi bi-exclamation-circle me-1"></i> {{ $message }}
+                                        </div>
+                                    @enderror
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="iban" class="form-label">IBAN / SWIFT</label>
+                                    <input type="text" id="iban" name="iban"
+                                           class="form-control @error('iban') is-invalid @enderror"
+                                           placeholder="e.g. GB29 NWBK 6016 1331 9268 19"
+                                           value="{{ old('iban', $profile->iban ?? '') }}"
+                                           maxlength="60">
+                                    @error('iban')
+                                        <div class="invalid-feedback">
+                                            <i class="bi bi-exclamation-circle me-1"></i> {{ $message }}
+                                        </div>
+                                    @enderror
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="payment_method" class="form-label">Payment method</label>
+                                    <input type="text" id="payment_method" name="payment_method"
+                                           class="form-control @error('payment_method') is-invalid @enderror"
+                                           placeholder="e.g. Bank Transfer"
+                                           value="{{ old('payment_method', $profile->payment_method ?? 'Bank Transfer') }}"
+                                           maxlength="50">
+                                    @error('payment_method')
+                                        <div class="invalid-feedback">
+                                            <i class="bi bi-exclamation-circle me-1"></i> {{ $message }}
+                                        </div>
+                                    @enderror
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="signature_name" class="form-label">Signature name</label>
+                                    <input type="text" id="signature_name" name="signature_name"
+                                           class="form-control @error('signature_name') is-invalid @enderror"
+                                           placeholder="e.g. Jane Doe"
+                                           value="{{ old('signature_name', $profile->signature_name ?? '') }}"
+                                           maxlength="150">
+                                    @error('signature_name')
+                                        <div class="invalid-feedback">
+                                            <i class="bi bi-exclamation-circle me-1"></i> {{ $message }}
+                                        </div>
+                                    @enderror
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="signature_title" class="form-label">Signature title</label>
+                                    <input type="text" id="signature_title" name="signature_title"
+                                           class="form-control @error('signature_title') is-invalid @enderror"
+                                           placeholder="e.g. Founder &amp; CEO"
+                                           value="{{ old('signature_title', $profile->signature_title ?? '') }}"
+                                           maxlength="150">
+                                    @error('signature_title')
                                         <div class="invalid-feedback">
                                             <i class="bi bi-exclamation-circle me-1"></i> {{ $message }}
                                         </div>

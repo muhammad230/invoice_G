@@ -6,17 +6,26 @@
     $pageHeading = $editing ? 'Edit invoice' : 'Create an invoice';
 
     // Prefill defaults: old() > invoice (edit) > controller-provided BusinessProfile.
-    $oldOr = function ($key, $default = '') use ($editing, $invoice, $business_name, $business_email, $business_phone, $business_address) {
+    $oldOr = function ($key, $default = '') use ($editing, $invoice, $business_name, $business_email, $business_phone, $business_address, $business_website, $business_tagline, $business_bank_name, $business_account_title, $business_account_number, $business_iban, $business_payment_method, $business_signature_name, $business_signature_title) {
         if (old($key, null) !== null) {
             return old($key);
         }
         if (!$editing) {
             // Create mode: use controller passed-in BusinessProfile values as default
             return match ($key) {
-                'business_name'    => $business_name    ?? $default,
-                'business_email'   => $business_email   ?? $default,
-                'business_phone'   => $business_phone   ?? $default,
-                'business_address' => $business_address ?? $default,
+                'business_name'             => $business_name             ?? $default,
+                'business_email'            => $business_email            ?? $default,
+                'business_phone'            => $business_phone            ?? $default,
+                'business_address'          => $business_address          ?? $default,
+                'business_website'          => $business_website          ?? $default,
+                'business_tagline'          => $business_tagline          ?? $default,
+                'business_bank_name'        => $business_bank_name        ?? $default,
+                'business_account_title'    => $business_account_title    ?? $default,
+                'business_account_number'   => $business_account_number   ?? $default,
+                'business_iban'             => $business_iban             ?? $default,
+                'business_payment_method'   => $business_payment_method   ?? $default,
+                'business_signature_name'   => $business_signature_name   ?? $default,
+                'business_signature_title'  => $business_signature_title  ?? $default,
                 default => $default,
             };
         }
@@ -27,6 +36,15 @@
             'business_email'  => old('business_email', $invoice->business_email  ?? ($business_email   ?? $default)),
             'business_phone'  => old('business_phone', $invoice->business_phone  ?? ($business_phone   ?? $default)),
             'business_address'=> old('business_address', $invoice->business_address ?? ($business_address ?? $default)),
+            'business_website'         => old('business_website', $invoice->business_website ?? ($business_website ?? $default)),
+            'business_tagline'         => old('business_tagline', $invoice->business_tagline ?? ($business_tagline ?? $default)),
+            'business_bank_name'       => old('business_bank_name', $invoice->business_bank_name ?? ($business_bank_name ?? $default)),
+            'business_account_title'   => old('business_account_title', $invoice->business_account_title ?? ($business_account_title ?? $default)),
+            'business_account_number'  => old('business_account_number', $invoice->business_account_number ?? ($business_account_number ?? $default)),
+            'business_iban'            => old('business_iban', $invoice->business_iban ?? ($business_iban ?? $default)),
+            'business_payment_method'  => old('business_payment_method', $invoice->business_payment_method ?? ($business_payment_method ?? $default)),
+            'business_signature_name'  => old('business_signature_name', $invoice->business_signature_name ?? ($business_signature_name ?? $default)),
+            'business_signature_title' => old('business_signature_title', $invoice->business_signature_title ?? ($business_signature_title ?? $default)),
             'invoice_number'  => old('invoice_number', $invoice->invoice_number),
             'invoice_date'    => old('invoice_date', $invoice->invoice_date->format('Y-m-d')),
             'due_date'        => old('due_date', optional($invoice->due_date)?->format('Y-m-d')),
@@ -55,17 +73,18 @@
         $oldItems = $invoice->items->map(function ($i) {
             return [
                 'description' => $i->description,
+                'details'     => (string) ($i->details ?? ''),
                 'quantity'    => $i->quantity,
                 'price'       => number_format($i->price / 100, 2, '.', ''),
             ];
         })->all();
     } else {
         $oldItems = [
-            ['description' => '', 'quantity' => 1, 'price' => ''],
+            ['description' => '', 'details' => '', 'quantity' => 1, 'price' => ''],
         ];
     }
 
-    $oldItems = $oldItems ?: [['description' => '', 'quantity' => 1, 'price' => '']];
+    $oldItems = $oldItems ?: [['description' => '', 'details' => '', 'quantity' => 1, 'price' => '']];
 
     // Is the user authenticated? If yes -> persist / clients / services available.
     $authed = Auth::check();
@@ -180,6 +199,14 @@
                                            placeholder="Your Studio Inc."
                                            value="{{ $oldOr('business_name') }}" required>
                                 </div>
+                                <div class="col-12">
+                                    <label for="business_tagline" class="form-label">Tagline</label>
+                                    <input type="text" id="business_tagline" name="business_tagline"
+                                           class="form-control"
+                                           placeholder="e.g. Design that converts"
+                                           value="{{ $oldOr('business_tagline') }}"
+                                           maxlength="150">
+                                </div>
                                 <div class="col-md-6">
                                     <label for="business_email" class="form-label">Email</label>
                                     <input type="email" id="business_email" name="business_email"
@@ -193,6 +220,14 @@
                                            class="form-control"
                                            placeholder="+1 (555) 000-0000"
                                            value="{{ $oldOr('business_phone') }}">
+                                </div>
+                                <div class="col-12">
+                                    <label for="business_website" class="form-label">Website</label>
+                                    <input type="text" id="business_website" name="business_website"
+                                           class="form-control"
+                                           placeholder="https://yourstudio.com"
+                                           value="{{ $oldOr('business_website') }}"
+                                           maxlength="255">
                                 </div>
                                 <div class="col-12">
                                     <label for="business_address" class="form-label">Address</label>
@@ -427,6 +462,11 @@
                                                            class="form-control item-description"
                                                            placeholder="Website design"
                                                            value="{{ $row['description'] ?? '' }}">
+                                                    <input type="text" name="items[{{ $idx }}][details]"
+                                                           class="form-control item-details mt-2"
+                                                           placeholder="Optional short detail line"
+                                                           value="{{ $row['details'] ?? '' }}"
+                                                           maxlength="1000">
                                                 </td>
                                                 <td>
                                                     <input type="number" name="items[{{ $idx }}][quantity]"
@@ -518,6 +558,66 @@
                         </div>
                     </div>
 
+                    {{-- 6. Payment details & signature -------------------------------- --}}
+                    <div class="card mb-4" style="border-radius: var(--radius); border: none; box-shadow: var(--shadow-sm);">
+                        <div class="card-body p-4">
+                            <h2 class="mb-1" style="font-size: 1.125rem;">
+                                <i class="bi bi-bank me-2" style="color: var(--saffron);"></i>
+                                Payment details &amp; signature
+                            </h2>
+                            <p class="ink-soft mb-3" style="font-size: 0.8125rem;">
+                                Optional — shown on the PDF. Leave blank to hide.
+                                @if ($authed)
+                                    Prefilled from <a href="{{ route('settings.business-profile.edit') }}" class="auth-link">Settings</a>.
+                                @endif
+                            </p>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="business_bank_name" class="form-label">Bank name</label>
+                                    <input type="text" id="business_bank_name" name="business_bank_name"
+                                           class="form-control" placeholder="e.g. Chase Bank"
+                                           value="{{ $oldOr('business_bank_name') }}" maxlength="150">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="business_account_title" class="form-label">Account title</label>
+                                    <input type="text" id="business_account_title" name="business_account_title"
+                                           class="form-control" placeholder="e.g. Your Studio Inc."
+                                           value="{{ $oldOr('business_account_title') }}" maxlength="150">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="business_account_number" class="form-label">Account number</label>
+                                    <input type="text" id="business_account_number" name="business_account_number"
+                                           class="form-control" placeholder="e.g. 0001 2345 6789"
+                                           value="{{ $oldOr('business_account_number') }}" maxlength="50">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="business_iban" class="form-label">IBAN / SWIFT</label>
+                                    <input type="text" id="business_iban" name="business_iban"
+                                           class="form-control" placeholder="e.g. GB29 NWBK 6016 1331 9268 19"
+                                           value="{{ $oldOr('business_iban') }}" maxlength="60">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="business_payment_method" class="form-label">Payment method</label>
+                                    <input type="text" id="business_payment_method" name="business_payment_method"
+                                           class="form-control" placeholder="e.g. Bank Transfer"
+                                           value="{{ $oldOr('business_payment_method') }}" maxlength="50">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="business_signature_name" class="form-label">Signature name</label>
+                                    <input type="text" id="business_signature_name" name="business_signature_name"
+                                           class="form-control" placeholder="e.g. Jane Doe"
+                                           value="{{ $oldOr('business_signature_name') }}" maxlength="150">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="business_signature_title" class="form-label">Signature title</label>
+                                    <input type="text" id="business_signature_title" name="business_signature_title"
+                                           class="form-control" placeholder="e.g. Founder &amp; CEO"
+                                           value="{{ $oldOr('business_signature_title') }}" maxlength="150">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     {{-- Action buttons: Save (authed) or "Sign up to save" (guest) --- --}}
                     <div class="row g-3">
                         @if ($authed)
@@ -588,8 +688,10 @@
                                          style="max-height: 60px; max-width: 180px; display: block;">
                                 </div>
                                 <div id="p_business_name" class="fw-bold mb-1" style="font-family: 'Fraunces', Georgia, serif; font-size: 1.125rem; color: var(--ink);">Your business name</div>
+                                <div id="p_business_tagline" class="mb-1" style="color: var(--ink-soft); font-size: 0.8125rem; font-style: italic;"></div>
                                 <div id="p_business_email" class="mb-1" style="color: var(--ink-soft); font-size: 0.8125rem;"></div>
                                 <div id="p_business_phone" class="mb-1" style="color: var(--ink-soft); font-size: 0.8125rem;"></div>
+                                <div id="p_business_website" class="mb-1" style="color: var(--ink-soft); font-size: 0.8125rem;"></div>
                                 <div id="p_business_address" style="color: var(--ink-soft); font-size: 0.8125rem; white-space: pre-line;"></div>
                             </div>
                             <div class="col-5 text-end">
@@ -663,6 +765,24 @@
                             <div id="p_notes" style="color: var(--ink-soft); font-size: 0.875rem; white-space: pre-line; display: none;"></div>
                             <div id="p_notes_placeholder" style="color: rgba(74,88,102,0.4); font-size: 0.875rem; font-style: italic;">
                                 No notes added.
+                            </div>
+                        </div>
+
+                        {{-- PREVIEW: PAYMENT DETAILS --}}
+                        <div id="p_payment_wrap" class="mt-4" style="display: none;">
+                            <div style="font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); margin-bottom: 0.375rem;">Payment details</div>
+                            <div id="p_payment_method" class="mb-1" style="font-weight: 600; font-size: 0.875rem;"></div>
+                            <div id="p_bank_name" class="mb-1" style="color: var(--ink-soft); font-size: 0.8125rem;"></div>
+                            <div id="p_account_title" class="mb-1" style="color: var(--ink-soft); font-size: 0.8125rem;"></div>
+                            <div id="p_account_number" class="mb-1" style="color: var(--ink-soft); font-size: 0.8125rem;"></div>
+                            <div id="p_iban" style="color: var(--ink-soft); font-size: 0.8125rem;"></div>
+                        </div>
+
+                        {{-- PREVIEW: SIGNATURE --}}
+                        <div id="p_signature_wrap" class="mt-4 text-end" style="display: none;">
+                            <div style="border-top: 1px solid rgba(18,32,46,0.15); display: inline-block; padding-top: 0.375rem; min-width: 180px; text-align: center;">
+                                <div id="p_signature_name" class="fw-bold" style="font-size: 0.875rem;"></div>
+                                <div id="p_signature_title" style="color: var(--ink-soft); font-size: 0.75rem;"></div>
                             </div>
                         </div>
                     </div>

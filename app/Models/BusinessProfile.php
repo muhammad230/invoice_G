@@ -10,11 +10,19 @@ class BusinessProfile extends Model
 {
     protected $fillable = [
         'business_name',
+        'tagline',
         'email',
         'phone',
         'website',
         'address',
         'tax_number',
+        'bank_name',
+        'account_title',
+        'account_number',
+        'iban',
+        'payment_method',
+        'signature_name',
+        'signature_title',
         'logo_path',
     ];
 

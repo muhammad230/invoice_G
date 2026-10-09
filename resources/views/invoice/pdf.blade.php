@@ -11,12 +11,14 @@
       - A4 with @page margin 0; a white "sheet" floats on a cream strip.
       - Rows/boxes use page-break-inside: avoid so pages split cleanly.
 
-    Variables provided by InvoiceController@download (unchanged):
+    Variables provided by InvoiceController@download:
       invoice_number, invoice_date, due_date, status,
       business_name, business_email, business_phone, business_address,
-      business_tax, logo_data,
+      business_website, business_tagline, business_tax, logo_data,
+      bank_name, account_title, account_number, iban, payment_method,
+      signature_name, signature_title,
       client_name, client_email, client_phone, client_address,
-      items[] = description, quantity, price, line_total,
+      items[] = description, details, quantity, price, line_total,
       currency_symbol,
       totals = subtotal, tax, tax_pct, discount, total,
       notes
@@ -41,19 +43,19 @@
         color: #12202E;                                   /* navy text */
         font-family: "DejaVu Sans", Helvetica, Arial, sans-serif;
         font-size: 12px;
-        line-height: 1.35;
+        line-height: 1.25;
     }
 
     /* White paper sitting on the cream strip */
     .sheet { background: #FFFFFF; margin: 4px; }
 
     /* Spacers (tables-only layout: use divs with height instead of margins) */
-    .gap    { height: 10px; }
-    .gap-lg { height: 18px; }                              /* items → totals */
+    .gap    { height: 6px; }
+    .gap-lg { height: 10px; }                              /* items → totals */
 
-    /* ================= 2. Header band =================================
+    /* ================= Header band ====================================
        Full-width navy block; saffron accent line directly beneath it. */
-    .band { width: 100%; background: #12202E; padding: 28px 40px; border-collapse: collapse; }
+    .band { width: 100%; background: #12202E; padding: 16px 36px; border-collapse: collapse; }
     .band td { vertical-align: middle; }
 
     .band-logo { max-height: 50px; max-width: 190px; display: block; margin-bottom: 8px; }
@@ -62,6 +64,12 @@
         font-size: 20px;
         font-weight: bold;
         line-height: 1.3;
+    }
+    .brand-tagline {
+        color: #F2A33A;                                   /* saffron tagline */
+        font-size: 11px;
+        font-style: italic;
+        margin-top: 2px;
     }
 
     .band-right  { text-align: right; }
@@ -83,9 +91,9 @@
     .accent { width: 100%; height: 4px; background: #F2A33A; }  /* 4px saffron line */
 
     /* Inner wrapper: 40px padding around all page content */
-    .wrap { padding: 40px; }
+    .wrap { padding: 24px 36px; }
 
-    /* ================= 3. Info row (3 columns) ======================= */
+    /* ================= Info row (3 columns) ========================= */
     .info { width: 100%; border-collapse: collapse; page-break-inside: avoid; }
     .info td { width: 33.33%; vertical-align: top; padding: 0 20px; }
     .info .col-first  { padding-left: 0; }
@@ -98,12 +106,13 @@
         letter-spacing: 1px;
         text-transform: uppercase;
         color: #4A5866;
-        margin-bottom: 5px;
+        margin-bottom: 3px;
     }
-    .val  { font-size: 12px; color: #12202E; margin-bottom: 2px; }
-    .val-strong { font-size: 13px; font-weight: bold; margin-bottom: 3px; }
+    .val  { font-size: 12px; color: #12202E; margin-bottom: 1px; }
+    .val-strong { font-size: 13px; font-weight: bold; margin-bottom: 2px; }
+    .val-soft { font-size: 11px; color: #4A5866; margin-bottom: 1px; }
 
-    /* ================= 4. Status badge =============================== */
+    /* ================= Status badge ================================= */
     .badge {
         display: inline-block;
         font-size: 10px;
@@ -119,7 +128,7 @@
     .badge-overdue { color: #B3372F; background: #FBE4E2; border-color: #F4D0CC; } /* red    */
     .badge-draft   { color: #4A5866; background: #F1EEE8; border-color: #E4DFD4; } /* grey   */
 
-    /* ================= 5. Items table ================================ */
+    /* ================= Items table ================================== */
     .items { width: 100%; border-collapse: collapse; }
     /* Repeat the navy header on every printed page */
     .items thead { display: table-header-group; }
@@ -137,7 +146,7 @@
 
     .items tbody td {
         font-size: 12px;
-        padding: 10px 12px;                               /* 10px vertical padding */
+        padding: 5px 12px;                                /* compact vertical padding */
         border-bottom: 1px solid #E8E4DA;                 /* thin bottom borders */
         vertical-align: top;
         word-wrap: break-word;                            /* long text wraps */
@@ -146,6 +155,7 @@
     .items tbody td.num { text-align: right; }            /* numbers right-aligned */
     .items tbody tr { page-break-inside: avoid; }         /* rows never split */
     .items tbody tr.alt td { background: #FAF6EE; }       /* zebra: cream rows */
+    .item-details { font-size: 10px; color: #4A5866; margin-top: 0; line-height: 1.2; }
 
     .items-empty {
         font-size: 12px;
@@ -155,7 +165,7 @@
         border-bottom: 1px solid #E8E4DA;
     }
 
-    /* ================= 6. Totals box (right side, 55% / 45%) ========= */
+    /* ================= Totals box (right side, 55% / 45%) =========== */
     .totals-outer { width: 100%; border-collapse: collapse; page-break-inside: avoid; }
     .totals-spacer { width: 55%; }                         /* empty left cell */
     .totals-cell   { width: 45%; vertical-align: top; }     /* totals live here */
@@ -166,7 +176,7 @@
         page-break-inside: avoid;
     }
     .totals td {
-        padding: 4px 12px;
+        padding: 3px 12px;
         font-size: 12px;
         border-bottom: 1px solid #EFEBE1;
     }
@@ -185,26 +195,60 @@
         color: #12202E;
     }
 
-    /* ================= 7. Notes box =================================== */
-    .notes { width: 100%; border-collapse: collapse; page-break-inside: avoid; }
+    /* ================= Payment details box ========================== */
+    .payment { width: 100%; border-collapse: collapse; page-break-inside: avoid; }
+    .payment td {
+        background: #FAF6EE;                              /* light cream box */
+        border: 1px solid #EFE8DA;
+        padding: 9px 12px;
+        vertical-align: top;
+    }
+    .payment .pay-grid { width: 100%; border-collapse: collapse; }
+    .payment .pay-grid td {
+        border: none;
+        background: transparent;
+        padding: 0 16px 0 0;
+        vertical-align: top;
+    }
+    .pay-key { font-size: 10px; font-weight: bold; letter-spacing: 0.5px;
+               text-transform: uppercase; color: #4A5866; margin-bottom: 2px; }
+    .pay-val { font-size: 12px; color: #12202E; }
+    .pay-method { font-size: 13px; font-weight: bold; color: #12202E; margin-bottom: 4px; }
+
+    /* ================= Notes + signature row ======================== */
+    .closing { width: 100%; border-collapse: collapse; page-break-inside: avoid; }
+    .closing td { vertical-align: top; }
+    .closing .notes-cell { width: 62%; padding-right: 24px; }
+    .closing .sign-cell  { width: 38%; }
+
+    .notes { width: 100%; border-collapse: collapse; }
     .notes td {
         background: #FAF6EE;                              /* light cream box */
         border: 1px solid #EFE8DA;
         padding: 10px 14px;
     }
     .notes .lbl { margin-bottom: 4px; }
-    .notes-text {
+    .notes-list { margin: 0; padding-left: 16px; }
+    .notes-list li {
         font-size: 11px;
         color: #12202E;
-        white-space: pre-wrap;
-        word-wrap: break-word;
-        line-height: 1.5;
+        line-height: 1.4;
+        margin-bottom: 1px;
     }
 
-    /* ================= 8. Footer (static, after content) ============== */
+    /* Signature block: blank signing line + bold name + grey title */
+    .sign-line {
+        border-bottom: 1px solid #4A5866;
+        height: 18px;                                     /* blank line to sign */
+        margin-bottom: 5px;
+    }
+    .sign-name { font-size: 12px; font-weight: bold; color: #12202E; }
+    .sign-title { font-size: 10px; color: #4A5866; margin-top: 1px; }
+
+    /* ================= Footer (static, after content) =============== */
     .footer {
-        margin-top: 14px;
-        padding-top: 8px;
+        margin-top: 10px;
+        padding-top: 6px;
         border-top: 1px solid #E8E4DA;                    /* thin line */
         text-align: center;
         font-size: 10px;
@@ -217,7 +261,7 @@
 <body>
 
 {{-- ====================================================================
-     Shared, safe formatting helpers (view-only; controller untouched)
+     Shared, safe formatting helpers (view-only)
      ==================================================================== --}}
 @php
     // Money formatter: symbol + 2 decimals (values arrive in major units
@@ -228,8 +272,7 @@
     $logoOk = !empty($logo_data) && is_string($logo_data)
               && str_starts_with(trim($logo_data), 'data:image/');
 
-    // Status → badge class + human label. Unknown/empty values fall back
-    // to a neutral grey badge (or are hidden entirely below).
+    // Status → badge class + human label.
     $statusKey = strtolower(trim((string) ($status ?? '')));
     [$badgeClass, $badgeLabel] = match ($statusKey) {
         'paid'    => ['badge-paid', 'Paid'],
@@ -246,6 +289,21 @@
 
     // Client name guard: controller may put an em-dash placeholder there.
     $hasClient = !empty($client_name) && trim($client_name) !== '—';
+
+    // Payment block: shown only when at least one bank/payment field exists.
+    $hasPayment = collect([
+        $payment_method ?? null, $bank_name ?? null, $account_title ?? null,
+        $account_number ?? null, $iban ?? null,
+    ])->contains(fn ($v) => filled($v));
+
+    // Signature block: shown only when there is a name to sign with.
+    $hasSignature = filled($signature_name ?? null);
+
+    // Notes → bullet list, one bullet per non-empty line.
+    $noteLines = collect(preg_split('/\r\n|\r|\n/', (string) $notes))
+        ->map(fn ($l) => trim($l))
+        ->filter()
+        ->values();
 @endphp
 
 {{--
@@ -258,12 +316,15 @@
      ==================================================================== --}}
 <table class="band" cellpadding="0" cellspacing="0">
 <tr>
-    {{-- Left: logo (optional) + business name in white --}}
+    {{-- Left: logo (optional) + business name + tagline --}}
     <td style="width:60%;">
         @if ($logoOk)
             <img src="{{ $logo_data }}" class="band-logo" alt="Logo">
         @endif
         <div class="brand-name">{{ $business_name }}</div>
+        @if (filled($business_tagline ?? null))
+            <div class="brand-tagline">{{ $business_tagline }}</div>
+        @endif
     </td>
 
     {{-- Right: wordmark + invoice number in saffron --}}
@@ -291,7 +352,6 @@
             @if ($hasClient)
                 <div class="val-strong">{{ $client_name }}</div>
             @endif
-            {{-- Email and phone each on their own line; empty values skipped --}}
             @if (!empty($client_email))
                 <div class="val">{{ $client_email }}</div>
             @endif
@@ -307,12 +367,17 @@
         <td>
             <div class="lbl">From</div>
             <div class="val-strong">{{ $business_name }}</div>
-            {{-- Email and phone each on their own line; empty values skipped --}}
+            @if (filled($business_tagline ?? null))
+                <div class="val-soft">{{ $business_tagline }}</div>
+            @endif
             @if (!empty($business_email))
                 <div class="val">{{ $business_email }}</div>
             @endif
             @if (!empty($business_phone))
                 <div class="val">{{ $business_phone }}</div>
+            @endif
+            @if (filled($business_website ?? null))
+                <div class="val">{{ $business_website }}</div>
             @endif
             @if (!empty($business_address))
                 <div class="val">{{ $business_address }}</div>
@@ -343,7 +408,7 @@
     <div class="gap"></div>
 
     {{-- ==================================================================
-         5. ITEMS TABLE — navy header, zebra rows, right-aligned numbers
+         4. ITEMS TABLE — navy header, zebra rows, right-aligned numbers
          ================================================================== --}}
     <table class="items" cellpadding="0" cellspacing="0">
         <thead>
@@ -358,7 +423,12 @@
         @forelse ($items as $it)
             {{-- Zebra striping via loop index; rows avoid page breaks --}}
             <tr class="{{ $loop->index % 2 === 1 ? 'alt' : '' }}">
-                <td>{{ $it['description'] }}</td>
+                <td>
+                    {{ $it['description'] }}
+                    @if (filled($it['details'] ?? null))
+                        <div class="item-details">{{ $it['details'] }}</div>
+                    @endif
+                </td>
                 <td class="num">{{ $it['quantity'] }}</td>
                 <td class="num">{{ $money($it['price']) }}</td>
                 <td class="num">{{ $money($it['line_total']) }}</td>
@@ -375,10 +445,7 @@
     <div class="gap-lg"></div>
 
     {{-- ==================================================================
-         6. TOTALS — 2-column layout: empty spacer (55%) | totals (45%).
-             The box's right edge therefore lines up with the Amount
-             column of the items table above (both end at the same
-             content edge).
+         5. TOTALS — 2-column layout: empty spacer (55%) | totals (45%).
          ================================================================== --}}
     <table class="totals-outer" cellpadding="0" cellspacing="0">
     <tr>
@@ -414,16 +481,85 @@
     </table>
 
     {{-- ==================================================================
-         7. NOTES — cream box, only when notes exist
+         6. PAYMENT DETAILS — cream box, only when bank/payment data exists
          ================================================================== --}}
-    @if (!empty(trim((string) $notes)))
+    @if ($hasPayment)
         <div class="gap"></div>
-        <table class="notes" cellpadding="0" cellspacing="0">
+        <table class="payment" cellpadding="0" cellspacing="0">
         <tr>
             <td>
-                <div class="lbl">Notes</div>
-                <div class="notes-text">{{ $notes }}</div>
+                <div class="lbl">Payment details</div>
+                @if (filled($payment_method ?? null))
+                    <div class="pay-method">{{ $payment_method }}</div>
+                @endif
+                <table class="pay-grid" cellpadding="0" cellspacing="0">
+                <tr>
+                    @if (filled($bank_name ?? null))
+                        <td>
+                            <div class="pay-key">Bank</div>
+                            <div class="pay-val">{{ $bank_name }}</div>
+                        </td>
+                    @endif
+                    @if (filled($account_title ?? null))
+                        <td>
+                            <div class="pay-key">Account title</div>
+                            <div class="pay-val">{{ $account_title }}</div>
+                        </td>
+                    @endif
+                    @if (filled($account_number ?? null))
+                        <td>
+                            <div class="pay-key">Account number</div>
+                            <div class="pay-val">{{ $account_number }}</div>
+                        </td>
+                    @endif
+                    @if (filled($iban ?? null))
+                        <td>
+                            <div class="pay-key">IBAN / SWIFT</div>
+                            <div class="pay-val">{{ $iban }}</div>
+                        </td>
+                    @endif
+                </tr>
+                </table>
             </td>
+        </tr>
+        </table>
+    @endif
+
+    {{-- ==================================================================
+         7. CLOSING ROW — notes (bullets) on the left, signature on the right
+         ================================================================== --}}
+    @if ($noteLines->isNotEmpty() || $hasSignature)
+        <div class="gap"></div>
+        <table class="closing" cellpadding="0" cellspacing="0">
+        <tr>
+            {{-- Notes as a bullet list (one bullet per line break) --}}
+            <td class="{{ $hasSignature ? 'notes-cell' : '' }}">
+                @if ($noteLines->isNotEmpty())
+                    <table class="notes" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td>
+                            <div class="lbl">Notes</div>
+                            <ul class="notes-list">
+                                @foreach ($noteLines as $line)
+                                    <li>{{ $line }}</li>
+                                @endforeach
+                            </ul>
+                        </td>
+                    </tr>
+                    </table>
+                @endif
+            </td>
+
+            {{-- Signature block (blank signing line + bold name + grey title) --}}
+            @if ($hasSignature)
+                <td class="sign-cell">
+                    <div class="sign-line"></div>
+                    <div class="sign-name">{{ $signature_name }}</div>
+                    @if (filled($signature_title ?? null))
+                        <div class="sign-title">{{ $signature_title }}</div>
+                    @endif
+                </td>
+            @endif
         </tr>
         </table>
     @endif
@@ -433,12 +569,8 @@
          ================================================================== --}}
     <div class="footer">
         <div class="thanks">Thank you for your business</div>
-        {{-- Contact lines: email and phone each on their own line --}}
-        @if (!empty($business_email))
-            <div>{{ $business_email }}</div>
-        @endif
-        @if (!empty($business_phone))
-            <div>{{ $business_phone }}</div>
+        @if (filled($business_website ?? null))
+            <div>{{ $business_website }}</div>
         @endif
     </div>
 

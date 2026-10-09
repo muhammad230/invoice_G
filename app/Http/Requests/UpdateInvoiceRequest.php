@@ -31,6 +31,17 @@ class UpdateInvoiceRequest extends FormRequest
             'business_address' => ['nullable', 'string', 'max:500'],
             'logo_data'        => ['nullable', 'string'],
 
+            // Business website / tagline + payment & signature snapshot
+            'business_website'         => ['nullable', 'string', 'max:255'],
+            'business_tagline'         => ['nullable', 'string', 'max:150'],
+            'business_bank_name'       => ['nullable', 'string', 'max:150'],
+            'business_account_title'   => ['nullable', 'string', 'max:150'],
+            'business_account_number'  => ['nullable', 'string', 'max:50'],
+            'business_iban'            => ['nullable', 'string', 'max:60'],
+            'business_payment_method'  => ['nullable', 'string', 'max:50'],
+            'business_signature_name'  => ['nullable', 'string', 'max:150'],
+            'business_signature_title' => ['nullable', 'string', 'max:150'],
+
             'invoice_number' => [
                 'required',
                 'string',
@@ -50,6 +61,7 @@ class UpdateInvoiceRequest extends FormRequest
 
             'items'               => ['required', 'array', 'min:1'],
             'items.*.description' => ['required', 'string', 'max:255'],
+            'items.*.details'     => ['nullable', 'string', 'max:1000'],
             'items.*.quantity'    => ['required', 'integer', 'min:1'],
             'items.*.price'       => ['required', 'numeric', 'min:0'],
 

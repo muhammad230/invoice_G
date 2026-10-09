@@ -97,8 +97,10 @@
 
         // -- Preview elements (right column) --------------------------------
         var pBusinessName    = $('p_business_name');
+        var pBusinessTagline = $('p_business_tagline');
         var pBusinessEmail   = $('p_business_email');
         var pBusinessPhone   = $('p_business_phone');
+        var pBusinessWebsite = $('p_business_website');
         var pBusinessAddress = $('p_business_address');
         var pLogoWrap        = $('p_business_logo');
         var pLogoImg         = $('p_logo_img');
@@ -120,6 +122,17 @@
         var pTotal       = $('p_total');
         var pNotes       = $('p_notes');
         var pNotesPH     = $('p_notes_placeholder');
+
+        var pPaymentWrap      = $('p_payment_wrap');
+        var pPaymentMethod    = $('p_payment_method');
+        var pBankName         = $('p_bank_name');
+        var pAccountTitle     = $('p_account_title');
+        var pAccountNumber    = $('p_account_number');
+        var pIban             = $('p_iban');
+
+        var pSignatureWrap    = $('p_signature_wrap');
+        var pSignatureName    = $('p_signature_name');
+        var pSignatureTitle   = $('p_signature_title');
 
         // -- Services: load saved products from the JSON <script> tag --------
         var SERVICE_OPTIONS = [];
@@ -154,6 +167,7 @@
                 var qtyInput   = row.querySelector('.item-quantity');
                 var priceInput = row.querySelector('.item-price');
                 var descInput  = row.querySelector('.item-description');
+                var detInput   = row.querySelector('.item-details');
                 var lineEl     = row.querySelector('.item-line-total');
 
                 var qty   = parseQuantity(qtyInput && qtyInput.value);
@@ -174,6 +188,7 @@
                 // Keep data for the preview items table
                 itemSummaries.push({
                     description: (descInput && descInput.value) ? String(descInput.value).trim() : '',
+                    details:     (detInput && detInput.value) ? String(detInput.value).trim() : '',
                     qty:         qty,
                     price:       price,
                     lineTotal:   lineDecimal
@@ -232,9 +247,14 @@
             var html = '';
             itemSummaries.forEach(function (item) {
                 var desc = item.description || '<span style="color:rgba(74,88,102,0.4);font-style:italic;">Item description</span>';
+                var descCell = escapeHtml(desc, true);
+                if (item.details) {
+                    descCell += '<div style="color:rgba(74,88,102,0.75); font-size:0.8125rem; margin-top:2px;">' +
+                        escapeHtml(item.details) + '</div>';
+                }
                 html +=
                     '<tr style="border-bottom:1px solid rgba(18,32,46,0.06);">' +
-                        '<td style="text-align:left;  padding:0.5rem 0.25rem;">' + escapeHtml(desc, true) + '</td>' +
+                        '<td style="text-align:left;  padding:0.5rem 0.25rem;">' + descCell + '</td>' +
                         '<td style="text-align:right; padding:0.5rem 0.25rem; font-variant-numeric:tabular-nums;">' + item.qty + '</td>' +
                         '<td style="text-align:right; padding:0.5rem 0.25rem; font-variant-numeric:tabular-nums;">' + formatMoney(item.price, currency) + '</td>' +
                         '<td style="text-align:right; padding:0.5rem 0.25rem; font-variant-numeric:tabular-nums; font-weight:600;">' + formatMoney(item.lineTotal, currency) + '</td>' +
@@ -255,41 +275,77 @@
         // =====================================================================
         // Update PREVIEW textual fields (business / client / invoice meta / notes)
         // =====================================================================
+        function fieldVal(id) {
+            var el = $(id);
+            return el ? (el.value || '').trim() : '';
+        }
+
         function updateTextPreview() {
             // Business
-            var bName = ($('business_name').value || '').trim();
+            var bName = fieldVal('business_name');
             pBusinessName.textContent    = bName || PLACEHOLDER.businessName;
             pBusinessName.style.color    = bName ? '' : 'rgba(74,88,102,0.4)';
 
-            setOptionalText(pBusinessEmail,   ($('business_email').value || '').trim());
-            setOptionalText(pBusinessPhone,   ($('business_phone').value || '').trim());
-            setOptionalText(pBusinessAddress, ($('business_address').value || '').trim());
+            setOptionalText(pBusinessTagline, fieldVal('business_tagline'));
+            setOptionalText(pBusinessEmail,   fieldVal('business_email'));
+            setOptionalText(pBusinessPhone,   fieldVal('business_phone'));
+            setOptionalText(pBusinessWebsite, fieldVal('business_website'));
+            setOptionalText(pBusinessAddress, fieldVal('business_address'));
 
             // Client
-            var cName = ($('client_name').value || '').trim();
-            pClientName.textContent    = cName || PLACEHOLDER.clientName;
-            pClientName.style.color    = cName ? '' : 'rgba(74,88,102,0.4)';
+            var cName = fieldVal('client_name');
+            if (pClientName) {
+                pClientName.textContent = cName || PLACEHOLDER.clientName;
+                pClientName.style.color = cName ? '' : 'rgba(74,88,102,0.4)';
+            }
 
-            setOptionalText(pClientEmail,   ($('client_email').value || '').trim());
-            setOptionalText(pClientPhone,   ($('client_phone').value || '').trim());
-            setOptionalText(pClientAddress, ($('client_address').value || '').trim());
+            setOptionalText(pClientEmail,   fieldVal('client_email'));
+            setOptionalText(pClientPhone,   fieldVal('client_phone'));
+            setOptionalText(pClientAddress, fieldVal('client_address'));
 
             // Invoice meta
-            pInvoiceNumber.textContent = ($('invoice_number').value || 'INV-001').trim() || 'INV-001';
-            pInvoiceDate.textContent   = formatDate($('invoice_date').value);
-            pDueDate.textContent       = formatDate($('due_date').value);
+            var invNumEl = $('invoice_number');
+            var invDateEl = $('invoice_date');
+            var dueDateEl = $('due_date');
+            if (pInvoiceNumber) pInvoiceNumber.textContent = (invNumEl && invNumEl.value ? invNumEl.value.trim() : '') || 'INV-001';
+            if (pInvoiceDate)   pInvoiceDate.textContent   = formatDate(invDateEl ? invDateEl.value : '');
+            if (pDueDate)       pDueDate.textContent       = formatDate(dueDateEl ? dueDateEl.value : '');
 
             // Notes
-            var notes = ($('notes').value || '').trim();
-            if (notes) {
-                pNotes.textContent = notes;
-                pNotes.style.display = 'block';
-                if (pNotesPH) pNotesPH.style.display = 'none';
-            } else {
-                pNotes.textContent = '';
-                pNotes.style.display = 'none';
-                if (pNotesPH) pNotesPH.style.display = 'block';
+            var notesEl = $('notes');
+            var notes = notesEl ? (notesEl.value || '').trim() : '';
+            if (pNotes) {
+                if (notes) {
+                    pNotes.textContent = notes;
+                    pNotes.style.display = 'block';
+                    if (pNotesPH) pNotesPH.style.display = 'none';
+                } else {
+                    pNotes.textContent = '';
+                    pNotes.style.display = 'none';
+                    if (pNotesPH) pNotesPH.style.display = 'block';
+                }
             }
+
+            // Payment details — show block only when at least one field filled
+            var payMethod = fieldVal('business_payment_method');
+            var bankName  = fieldVal('business_bank_name');
+            var acctTitle = fieldVal('business_account_title');
+            var acctNo    = fieldVal('business_account_number');
+            var iban      = fieldVal('business_iban');
+            var hasPayment = !!(payMethod || bankName || acctTitle || acctNo || iban);
+            if (pPaymentWrap) pPaymentWrap.style.display = hasPayment ? '' : 'none';
+            setOptionalText(pPaymentMethod, payMethod);
+            setOptionalText(pBankName,      bankName);
+            setOptionalText(pAccountTitle,  acctTitle);
+            setOptionalText(pAccountNumber, acctNo);
+            setOptionalText(pIban,          iban);
+
+            // Signature — show only when a name is present
+            var sigName  = fieldVal('business_signature_name');
+            var sigTitle = fieldVal('business_signature_title');
+            if (pSignatureWrap) pSignatureWrap.style.display = sigName ? '' : 'none';
+            if (pSignatureName)  pSignatureName.textContent  = sigName;
+            setOptionalText(pSignatureTitle, sigTitle);
         }
 
         /**
@@ -375,6 +431,9 @@
                     '<input type="text" name="items[' + idx + '][description]" ' +
                            'class="form-control item-description" ' +
                            'placeholder="Website design">' +
+                    '<input type="text" name="items[' + idx + '][details]" ' +
+                           'class="form-control item-details mt-2" ' +
+                           'placeholder="Optional short detail line" maxlength="1000">' +
                 '</td>' +
                 '<td>' +
                     '<input type="number" name="items[' + idx + '][quantity]" ' +

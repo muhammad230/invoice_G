@@ -47,12 +47,20 @@ class BusinessProfileController extends Controller
         $isNew   = $profile === null;
 
         $data = [
-            'business_name' => $validated['business_name'],
-            'email'         => $validated['email']      ?? null,
-            'phone'         => $validated['phone']      ?? null,
-            'website'       => $validated['website']    ?? null,
-            'address'       => $validated['address']    ?? null,
-            'tax_number'    => $validated['tax_number'] ?? null,
+            'business_name'   => $validated['business_name'],
+            'tagline'         => $validated['tagline']         ?? null,
+            'email'           => $validated['email']           ?? null,
+            'phone'           => $validated['phone']           ?? null,
+            'website'         => $validated['website']         ?? null,
+            'address'         => $validated['address']         ?? null,
+            'tax_number'      => $validated['tax_number']      ?? null,
+            'bank_name'       => $validated['bank_name']       ?? null,
+            'account_title'   => $validated['account_title']   ?? null,
+            'account_number'  => $validated['account_number']  ?? null,
+            'iban'            => $validated['iban']            ?? null,
+            'payment_method'  => $validated['payment_method']  ?? null,
+            'signature_name'  => $validated['signature_name']  ?? null,
+            'signature_title' => $validated['signature_title'] ?? null,
         ];
 
         if ($isNew) {
