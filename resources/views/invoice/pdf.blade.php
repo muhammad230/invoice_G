@@ -1,27 +1,13 @@
 {{--
     ==========================================================================
     Invoice PDF template (DomPDF)
+    Redesigned to match the requested modern invoice layout with web colors.
 
-    Constraints (DomPDF-safe):
-      - Standalone HTML, one inline <style> block, no external assets.
-      - Layout uses only tables / borders / padding — no flex, grid,
-        fixed positioning, transforms, gradients or box-shadows.
-      - Fonts: DejaVu Sans (body) + DejaVu Serif (wordmark & big numbers),
-        both bundled with DomPDF so Rs / € / £ render correctly.
-      - A4 with @page margin 0; a white "sheet" floats on a cream strip.
-      - Rows/boxes use page-break-inside: avoid so pages split cleanly.
-
-    Variables provided by InvoiceController@download:
-      invoice_number, invoice_date, due_date, status,
-      business_name, business_email, business_phone, business_address,
-      business_website, business_tagline, business_tax, logo_data,
-      bank_name, account_title, account_number, iban, payment_method,
-      signature_name, signature_title,
-      client_name, client_email, client_phone, client_address,
-      items[] = description, details, quantity, price, line_total,
-      currency_symbol,
-      totals = subtotal, tax, tax_pct, discount, total,
-      notes
+    DomPDF stability guarantees:
+      - Page margin 0 with strict inner padding (.wrap) so text NEVER clips off-canvas.
+      - No CSS floats (align="right" tables used instead).
+      - Self-contained base64 PNG icons so rendering is 100% reliable.
+      - white-space: nowrap on amounts so currency and numbers never break across lines.
     ==========================================================================
 --}}
 <!DOCTYPE html>
@@ -30,251 +16,70 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 <title>Invoice {{ $invoice_number }}</title>
 <style>
-    /* ================= Page setup =====================================
-       A4, no printer margin. The body is cream so a thin strip frames
-       the white sheet; @page margin 0 keeps edges predictable. */
-    @page { margin: 0; size: A4; }
+    @page {
+        size: A4 portrait;
+        margin: 0;
+    }
 
-    * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; }
+    * {
+        box-sizing: border-box;
+    }
+
+    html, body {
+        margin: 0;
+        padding: 0;
+        background-color: #FFFFFF;
+    }
 
     body {
-        background: #FAF6EE;                              /* cream page strip */
-        color: #12202E;                                   /* navy text */
+        color: #12202E;
         font-family: "DejaVu Sans", Helvetica, Arial, sans-serif;
-        font-size: 12px;
-        line-height: 1.25;
-    }
-
-    /* White paper sitting on the cream strip */
-    .sheet { background: #FFFFFF; margin: 4px; }
-
-    /* Spacers (tables-only layout: use divs with height instead of margins) */
-    .gap    { height: 6px; }
-    .gap-lg { height: 10px; }                              /* items → totals */
-
-    /* ================= Header band ====================================
-       Full-width navy block; saffron accent line directly beneath it. */
-    .band { width: 100%; background: #12202E; padding: 16px 36px; border-collapse: collapse; }
-    .band td { vertical-align: middle; }
-
-    .band-logo { max-height: 50px; max-width: 190px; display: block; margin-bottom: 8px; }
-    .brand-name {
-        color: #FFFFFF;
-        font-size: 20px;
-        font-weight: bold;
-        line-height: 1.3;
-    }
-    .brand-tagline {
-        color: #F2A33A;                                   /* saffron tagline */
         font-size: 11px;
-        font-style: italic;
-        margin-top: 2px;
+        line-height: 1.35;
     }
 
-    .band-right  { text-align: right; }
-    .wordmark {
-        font-family: "DejaVu Serif", Georgia, serif;      /* serif title */
-        font-weight: bold;
-        font-size: 28px;
-        color: #FFFFFF;
-        line-height: 1;
-        letter-spacing: 1px;
+    .wrap {
+        padding: 28px 36px 20px 36px;
+        width: 100%;
     }
-    .band-number {
-        font-family: "DejaVu Serif", Georgia, serif;
-        font-weight: bold;
-        font-size: 14px;
-        color: #F2A33A;                                   /* saffron number */
-        margin-top: 6px;
+
+    table {
+        border-collapse: collapse;
     }
-    .accent { width: 100%; height: 4px; background: #F2A33A; }  /* 4px saffron line */
 
-    /* Inner wrapper: 40px padding around all page content */
-    .wrap { padding: 24px 36px; }
-
-    /* ================= Info row (3 columns) ========================= */
-    .info { width: 100%; border-collapse: collapse; page-break-inside: avoid; }
-    .info td { width: 33.33%; vertical-align: top; padding: 0 20px; }
-    .info .col-first  { padding-left: 0; }
-    .info .col-last   { padding-right: 0; }
-
-    /* Small grey uppercase labels */
-    .lbl {
-        font-size: 10px;
-        font-weight: bold;
-        letter-spacing: 1px;
-        text-transform: uppercase;
-        color: #4A5866;
-        margin-bottom: 3px;
-    }
-    .val  { font-size: 12px; color: #12202E; margin-bottom: 1px; }
-    .val-strong { font-size: 13px; font-weight: bold; margin-bottom: 2px; }
-    .val-soft { font-size: 11px; color: #4A5866; margin-bottom: 1px; }
-
-    /* ================= Status badge ================================= */
+    /* Status badge */
     .badge {
         display: inline-block;
-        font-size: 10px;
+        font-size: 9px;
         font-weight: bold;
         letter-spacing: 0.5px;
         text-transform: uppercase;
-        padding: 3px 10px;
-        border-radius: 3px;                               /* small rounded box */
-        border: 1px solid transparent;
+        padding: 2px 7px;
+        border-radius: 3px;
     }
-    .badge-paid    { color: #3F6B50; background: #E6F2EC; border-color: #CBE3D6; } /* green  */
-    .badge-pending { color: #C97F14; background: #FBF0D8; border-color: #F2E1BB; } /* orange */
-    .badge-overdue { color: #B3372F; background: #FBE4E2; border-color: #F4D0CC; } /* red    */
-    .badge-draft   { color: #4A5866; background: #F1EEE8; border-color: #E4DFD4; } /* grey   */
+    .badge-paid    { color: #3F6B50; background: #E6F2EC; border: 1px solid #CBE3D6; }
+    .badge-pending { color: #C97F14; background: #FDF4E6; border: 1px solid #F5DFB3; }
+    .badge-overdue { color: #B3372F; background: #FDE8E7; border: 1px solid #F6D0CE; }
+    .badge-draft   { color: #4A5866; background: #F3F1EC; border: 1px solid #E5DFD4; }
 
-    /* ================= Items table ================================== */
-    .items { width: 100%; border-collapse: collapse; }
-    /* Repeat the navy header on every printed page */
-    .items thead { display: table-header-group; }
-    .items thead th {
-        background: #12202E;                              /* navy header row */
-        color: #FFFFFF;
-        font-size: 10px;
-        font-weight: bold;
-        letter-spacing: 1px;
-        text-transform: uppercase;
-        padding: 7px 12px;
-        text-align: left;
+    .card-box {
+        background-color: #FAF6EE;
+        border: 1px solid #EAE3D2;
+        border-radius: 6px;
     }
-    .items thead th.num { text-align: right; }
-    .items thead th.idx { text-align: center; }
-    .items tbody td.idx { text-align: center; color: #4A5866; }
-
-    .items tbody td {
-        font-size: 12px;
-        padding: 5px 12px;                                /* compact vertical padding */
-        border-bottom: 1px solid #E8E4DA;                 /* thin bottom borders */
-        vertical-align: top;
-        word-wrap: break-word;                            /* long text wraps */
-        overflow-wrap: break-word;
-    }
-    .items tbody td.num { text-align: right; }            /* numbers right-aligned */
-    .items tbody tr { page-break-inside: avoid; }         /* rows never split */
-    .items tbody tr.alt td { background: #FAF6EE; }       /* zebra: cream rows */
-    .item-details { font-size: 10px; color: #4A5866; margin-top: 0; line-height: 1.2; }
-
-    .items-empty {
-        font-size: 12px;
-        color: #9A9589;
-        font-style: italic;
-        padding: 10px 12px;
-        border-bottom: 1px solid #E8E4DA;
-    }
-
-    /* ================= Totals box (right side, 55% / 45%) =========== */
-    .totals-outer { width: 100%; border-collapse: collapse; page-break-inside: avoid; }
-    .totals-spacer { width: 55%; }                         /* empty left cell */
-    .totals-cell   { width: 45%; vertical-align: top; }     /* totals live here */
-    .totals {
-        width: 100%;                                        /* fills the 45% cell */
-        border-collapse: collapse;
-        border: 1px solid #E8E4DA;
-        page-break-inside: avoid;
-    }
-    .totals td {
-        padding: 3px 12px;
-        font-size: 12px;
-        border-bottom: 1px solid #EFEBE1;
-    }
-    .totals .t-label { color: #4A5866; text-align: left; }
-    .totals .t-value { color: #12202E; text-align: right; white-space: nowrap; }
-
-    /* Final row: saffron background, navy bold 16px serif text */
-    .totals .total-row td {
-        background: #F2A33A;
-        border-bottom: none;
-        border-top: 2px solid #12202E;
-        padding: 8px 12px;
-        font-family: "DejaVu Serif", Georgia, serif;
-        font-size: 16px;
-        font-weight: bold;
-        color: #12202E;
-    }
-
-    /* ================= Payment details box ========================== */
-    .payment { width: 100%; border-collapse: collapse; page-break-inside: avoid; }
-    .payment td {
-        background: #FAF6EE;                              /* light cream box */
-        border: 1px solid #EFE8DA;
-        padding: 9px 12px;
-        vertical-align: top;
-    }
-    .payment .pay-grid { width: 100%; border-collapse: collapse; }
-    .payment .pay-grid td {
-        border: none;
-        background: transparent;
-        padding: 0 16px 0 0;
-        vertical-align: top;
-    }
-    .pay-key { font-size: 10px; font-weight: bold; letter-spacing: 0.5px;
-               text-transform: uppercase; color: #4A5866; margin-bottom: 2px; }
-    .pay-val { font-size: 12px; color: #12202E; }
-    .pay-method { font-size: 13px; font-weight: bold; color: #12202E; margin-bottom: 4px; }
-
-    /* ================= Notes + signature row ======================== */
-    .closing { width: 100%; border-collapse: collapse; page-break-inside: avoid; }
-    .closing td { vertical-align: top; }
-    .closing .notes-cell { width: 62%; padding-right: 24px; }
-    .closing .sign-cell  { width: 38%; }
-
-    .notes { width: 100%; border-collapse: collapse; }
-    .notes td {
-        background: #FAF6EE;                              /* light cream box */
-        border: 1px solid #EFE8DA;
-        padding: 10px 14px;
-    }
-    .notes .lbl { margin-bottom: 4px; }
-    .notes-list { margin: 0; padding-left: 16px; }
-    .notes-list li {
-        font-size: 11px;
-        color: #12202E;
-        line-height: 1.4;
-        margin-bottom: 1px;
-    }
-
-    /* Signature block: blank signing line + bold name + grey title */
-    .sign-line {
-        border-bottom: 1px solid #4A5866;
-        height: 18px;                                     /* blank line to sign */
-        margin-bottom: 5px;
-    }
-    .sign-name { font-size: 12px; font-weight: bold; color: #12202E; }
-    .sign-title { font-size: 10px; color: #4A5866; margin-top: 1px; }
-
-    /* ================= Footer (static, after content) =============== */
-    .footer {
-        margin-top: 10px;
-        padding-top: 6px;
-        border-top: 1px solid #E8E4DA;                    /* thin line */
-        text-align: center;
-        font-size: 10px;
-        color: #4A5866;
-        page-break-inside: avoid;
-    }
-    .footer .thanks { letter-spacing: 0.5px; margin-bottom: 3px; }
 </style>
 </head>
 <body>
 
-{{-- ====================================================================
-     Shared, safe formatting helpers (view-only)
-     ==================================================================== --}}
 @php
-    // Money formatter: symbol + 2 decimals (values arrive in major units
-    // because the controller already divided minor units by 100).
-    $money = fn ($v) => $currency_symbol . ' ' . number_format((float) $v, 2);
+    // Money formatter: symbol + 2 decimals with non-breaking space
+    $money = fn ($v) => $currency_symbol . '&nbsp;' . number_format((float) $v, 2);
 
-    // Logo is only usable as a data-URI (DomPDF cannot fetch external URLs).
+    // Logo check
     $logoOk = !empty($logo_data) && is_string($logo_data)
               && str_starts_with(trim($logo_data), 'data:image/');
 
-    // Status → badge class + human label.
+    // Status badge
     $statusKey = strtolower(trim((string) ($status ?? '')));
     [$badgeClass, $badgeLabel] = match ($statusKey) {
         'paid'    => ['badge-paid', 'Paid'],
@@ -284,301 +89,444 @@
         default   => ['badge-draft', $statusKey === '' ? '' : ucfirst($statusKey)],
     };
 
-    // Tax label with its percentage, e.g. "Tax (15%)" — trims trailing zeros.
+    // Tax formatting
     $taxPct   = (float) ($totals['tax_pct'] ?? 0);
     $taxText  = rtrim(rtrim(number_format($taxPct, 2), '0'), '.');
     $taxLabel = $taxPct > 0 ? "Tax ({$taxText}%)" : 'Tax';
 
-    // Client name guard: controller may put an em-dash placeholder there.
+    // Client guard
     $hasClient = !empty($client_name) && trim($client_name) !== '—';
 
-    // Payment block: shown only when at least one bank/payment field exists.
+    // Payment details presence
     $hasPayment = collect([
         $payment_method ?? null, $bank_name ?? null, $account_title ?? null,
         $account_number ?? null, $iban ?? null,
     ])->contains(fn ($v) => filled($v));
 
-    // Signature block: shown only when there is a name to sign with.
+    // Signature presence
     $hasSignature = filled($signature_name ?? null);
 
-    // Notes → bullet list, one bullet per non-empty line.
+    // Notes lines
     $noteLines = collect(preg_split('/\r\n|\r|\n/', (string) $notes))
         ->map(fn ($l) => trim($l))
         ->filter()
         ->values();
+
+    // High compatibility base64 PNG icons (11x11, #4A5866)
+    $iconLocation = '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAQ0lEQVQokWNgoDdgxCXhFZH2H8betmIWhjqsGpE14dKMoRGbJmyamXApIgTor5HswKGujei2YotHsm3EC/DFKdk2AgCKNRYZvXhr7wAAAABJRU5ErkJggg==" width="10" height="10" style="vertical-align: -1px; margin-right: 4px;" alt="">';
+    $iconEmail    = '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAJklEQVQokWNgGDKAkYGBgcErIu0/KZq2rZjFyESujaMaB5VG+gMAcJAEEuPhJwkAAAAASUVORK5CYII=" width="10" height="10" style="vertical-align: -1px; margin-right: 4px;" alt="">';
+    $iconGlobe    = '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAUklEQVQokWNgIBMw4pLwikj7D2NvWzELQx2GALIGdIBsAIpGfJrQNcM1EqMJWTMTsYrRASOptsEA2TZS5lQGBnoHDim2YsQjMZpxphxcBmBLqwBo3SIZ0HXk2wAAAABJRU5ErkJggg==" width="10" height="10" style="vertical-align: -1px; margin-right: 4px;" alt="">';
+    $iconPhone    = '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAJElEQVQokWNgIBMwInO8ItL+41O8bcUsuHomcm0c1Tiqkc4aAUREBBrzPRNyAAAAAElFTkSuQmCC" width="10" height="10" style="vertical-align: -1px; margin-right: 4px;" alt="">';
+    $iconUser     = '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAATUlEQVQokWNgIBMw4pLwikj7D2NvWzELQx1WjciacGnG0IhNEzbNTLgUEQJka6SeH7FpxhaqtAH4Qpjs6EDRiE8Tuma4RmI0IWsmOx4BhLYiFsjsozgAAAAASUVORK5CYII=" width="10" height="10" style="vertical-align: -1px; margin-right: 4px;" alt="">';
+    $iconNotes    = '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAI0lEQVQokWNgIBMwwhheEWn/idW0bcUsRiZybRzVOKqRzhoBPJgEGnwd5+AAAAAASUVORK5CYII=" width="12" height="12" style="vertical-align: -1px; margin-right: 4px;" alt="">';
 @endphp
 
-{{--
-     1. SHEET: white paper on the cream strip (wraps ALL page content)
-     ==================================================================== --}}
-<div class="sheet">
+<div class="wrap">
 
 {{-- ====================================================================
-     2. HEADER BAND — navy, logo + business (left) / INVOICE + number (right)
+     1. TOP HEADER: Logo & Branding (Left) / Company Contact (Right)
      ==================================================================== --}}
-<table class="band" cellpadding="0" cellspacing="0">
+<table cellpadding="0" cellspacing="0" style="width: 100%;">
 <tr>
-    {{-- Left: logo (optional) + business name + tagline --}}
-    <td style="width:60%;">
+    {{-- Left: Logo / Brand Name + Tagline --}}
+    <td style="width: 50%; vertical-align: top;">
         @if ($logoOk)
-            <img src="{{ $logo_data }}" class="band-logo" alt="Logo">
-        @endif
-        <div class="brand-name">{{ $business_name }}</div>
-        @if (filled($business_tagline ?? null))
-            <div class="brand-tagline">{{ $business_tagline }}</div>
+            <img src="{{ $logo_data }}" style="max-height: 48px; max-width: 180px; display: block; margin-bottom: 4px;" alt="Logo">
+        @else
+            <table cellpadding="0" cellspacing="0">
+            <tr>
+                <td style="vertical-align: middle; padding-right: 8px;">
+                    <div style="width: 28px; height: 28px; background-color: #12202E; border-radius: 6px; text-align: center; line-height: 28px; color: #FFFFFF; font-weight: bold; font-size: 15px;">
+                        {{ mb_strtoupper(mb_substr($business_name ?? 'I', 0, 1)) }}
+                    </div>
+                </td>
+                <td style="vertical-align: middle;">
+                    <div style="font-size: 18px; font-weight: bold; color: #12202E; line-height: 1.1;">
+                        {{ $business_name }}
+                    </div>
+                    @if (filled($business_tagline ?? null))
+                        <div style="font-size: 9.5px; color: #4A5866; margin-top: 2px;">
+                            {{ $business_tagline }}
+                        </div>
+                    @endif
+                </td>
+            </tr>
+            </table>
         @endif
     </td>
 
-    {{-- Right: wordmark + invoice number in saffron --}}
-    <td class="band-right" style="width:40%;">
-        <div class="wordmark">INVOICE</div>
-        <div class="band-number">{{ $invoice_number }}</div>
+    {{-- Right: Business Contact Details with icons --}}
+    <td style="width: 50%; vertical-align: top; text-align: right;">
+        <div style="font-size: 12px; font-weight: bold; color: #12202E; margin-bottom: 3px;">
+            {{ $business_name }}
+        </div>
+        @if (!empty($business_address))
+            <div style="font-size: 10px; color: #4A5866; margin-bottom: 2px;">
+                {!! $iconLocation !!}{{ $business_address }}
+            </div>
+        @endif
+        @if (!empty($business_email))
+            <div style="font-size: 10px; color: #4A5866; margin-bottom: 2px;">
+                {!! $iconEmail !!}{{ $business_email }}
+            </div>
+        @endif
+        @if (filled($business_website ?? null))
+            <div style="font-size: 10px; color: #4A5866; margin-bottom: 2px;">
+                {!! $iconGlobe !!}{{ $business_website }}
+            </div>
+        @endif
+        @if (!empty($business_phone))
+            <div style="font-size: 10px; color: #4A5866; margin-bottom: 2px;">
+                {!! $iconPhone !!}{{ $business_phone }}
+            </div>
+        @endif
     </td>
 </tr>
 </table>
 
-{{-- 4px saffron accent line directly under the band --}}
-<div class="accent"></div>
+<div style="height: 16px;"></div>
 
-{{-- Inner wrapper: all page content sits inside 40px padding --}}
-<div class="wrap">
-
-    {{-- ==================================================================
-         3. INFO ROW — Billed to | From | Details
-         ================================================================== --}}
-    <table class="info" cellpadding="0" cellspacing="0">
-    <tr>
-        {{-- Billed to --}}
-        <td class="col-first">
-            <div class="lbl">Billed to</div>
-            @if ($hasClient)
-                <div class="val-strong">{{ $client_name }}</div>
-            @endif
-            @if (!empty($client_email))
-                <div class="val">{{ $client_email }}</div>
-            @endif
-            @if (!empty($client_phone))
-                <div class="val">{{ $client_phone }}</div>
-            @endif
-            @if (!empty($client_address))
-                <div class="val">{{ $client_address }}</div>
-            @endif
-        </td>
-
-        {{-- From (business) --}}
-        <td>
-            <div class="lbl">From</div>
-            <div class="val-strong">{{ $business_name }}</div>
-            @if (filled($business_tagline ?? null))
-                <div class="val-soft">{{ $business_tagline }}</div>
-            @endif
-            @if (!empty($business_email))
-                <div class="val">{{ $business_email }}</div>
-            @endif
-            @if (!empty($business_phone))
-                <div class="val">{{ $business_phone }}</div>
-            @endif
-            @if (filled($business_website ?? null))
-                <div class="val">{{ $business_website }}</div>
-            @endif
-            @if (!empty($business_address))
-                <div class="val">{{ $business_address }}</div>
-            @endif
-            @if (!empty($business_tax))
-                <div class="val">Tax / VAT: {{ $business_tax }}</div>
-            @endif
-        </td>
-
-        {{-- Details: dates + status badge --}}
-        <td class="col-last">
-            <div class="lbl">Details</div>
-            @if (!empty($invoice_date))
-                <div class="val">Invoice date: <strong>{{ $invoice_date }}</strong></div>
-            @endif
-            @if (!empty($due_date))
-                <div class="val">Due date: <strong>{{ $due_date }}</strong></div>
-            @endif
-            @if ($badgeLabel !== '')
-                <div class="val" style="margin-top:4px;">
-                    <span class="badge {{ $badgeClass }}">{{ $badgeLabel }}</span>
-                </div>
-            @endif
-        </td>
-    </tr>
-    </table>
-
-    <div class="gap"></div>
-
-    {{-- ==================================================================
-         4. ITEMS TABLE — navy header, zebra rows, right-aligned numbers
-         ================================================================== --}}
-    <table class="items" cellpadding="0" cellspacing="0">
-        <thead>
+{{-- ====================================================================
+     2. INVOICE TITLE, META DETAILS (Left) & TOTAL AMOUNT CARD (Right)
+     ==================================================================== --}}
+<table cellpadding="0" cellspacing="0" style="width: 100%;">
+<tr>
+    {{-- Left: INVOICE title + Number, Date, Due Date --}}
+    <td style="width: 55%; vertical-align: top;">
+        <div style="font-size: 24px; font-weight: bold; color: #12202E; letter-spacing: 0.5px; line-height: 1; margin-bottom: 8px;">
+            INVOICE
+        </div>
+        <table cellpadding="0" cellspacing="0" style="font-size: 11px;">
         <tr>
-            <th class="idx" style="width:6%;">#</th>
-            <th style="width:42%;">Description</th>
-            <th class="num" style="width:12%;">Qty</th>
-            <th class="num" style="width:20%;">Price</th>
-            <th class="num" style="width:20%;">Amount</th>
+            <td style="color: #4A5866; padding: 2px 12px 2px 0;">Invoice No:</td>
+            <td style="font-weight: bold; color: #12202E; padding: 2px 0;">{{ $invoice_number }}</td>
         </tr>
-        </thead>
-        <tbody>
-        @forelse ($items as $it)
-            {{-- Zebra striping via loop index; rows avoid page breaks --}}
-            <tr class="{{ $loop->index % 2 === 1 ? 'alt' : '' }}">
-                <td class="idx">{{ $loop->iteration }}</td>
-                <td>
-                    {{ $it['description'] }}
-                    @if (filled($it['details'] ?? null))
-                        <div class="item-details">{{ $it['details'] }}</div>
-                    @endif
-                </td>
-                <td class="num">{{ $it['quantity'] }}</td>
-                <td class="num">{{ $money($it['price']) }}</td>
-                <td class="num">{{ $money($it['line_total']) }}</td>
-            </tr>
-        @empty
-            <tr>
-                <td colspan="5" class="items-empty">No items on this invoice.</td>
-            </tr>
-        @endforelse
-        </tbody>
-    </table>
-
-    {{-- 18px of breathing room between the items table and the totals box --}}
-    <div class="gap-lg"></div>
-
-    {{-- ==================================================================
-         5. TOTALS — 2-column layout: empty spacer (55%) | totals (45%).
-         ================================================================== --}}
-    <table class="totals-outer" cellpadding="0" cellspacing="0">
-    <tr>
-        {{-- Left cell: intentionally empty, pushes the box to the right --}}
-        <td class="totals-spacer"></td>
-
-        {{-- Right cell: Subtotal / Tax / Discount / Total rows --}}
-        <td class="totals-cell">
-            <table class="totals" cellpadding="0" cellspacing="0">
-                <tr>
-                    <td class="t-label">Subtotal</td>
-                    <td class="t-value">{{ $money($totals['subtotal']) }}</td>
-                </tr>
-                @if ($taxPct > 0 || (float) $totals['tax'] > 0)
-                    <tr>
-                        <td class="t-label">{{ $taxLabel }}</td>
-                        <td class="t-value">{{ $money($totals['tax']) }}</td>
-                    </tr>
-                @endif
-                @if ((float) $totals['discount'] > 0)
-                    <tr>
-                        <td class="t-label">Discount</td>
-                        <td class="t-value">- {{ $money($totals['discount']) }}</td>
-                    </tr>
-                @endif
-                <tr class="total-row">
-                    <td class="t-label">Total Amount</td>
-                    <td class="t-value">{{ $money($totals['total']) }}</td>
-                </tr>
-            </table>
-        </td>
-    </tr>
-    </table>
-
-    {{-- ==================================================================
-         6. PAYMENT DETAILS — cream box, only when bank/payment data exists
-         ================================================================== --}}
-    @if ($hasPayment)
-        <div class="gap"></div>
-        <table class="payment" cellpadding="0" cellspacing="0">
         <tr>
-            <td>
-                <div class="lbl">Payment details</div>
-                @if (filled($payment_method ?? null))
-                    <div class="pay-method">{{ $payment_method }}</div>
-                @endif
-                <table class="pay-grid" cellpadding="0" cellspacing="0">
-                <tr>
-                    @if (filled($bank_name ?? null))
-                        <td>
-                            <div class="pay-key">Bank</div>
-                            <div class="pay-val">{{ $bank_name }}</div>
-                        </td>
-                    @endif
-                    @if (filled($account_title ?? null))
-                        <td>
-                            <div class="pay-key">Account title</div>
-                            <div class="pay-val">{{ $account_title }}</div>
-                        </td>
-                    @endif
-                    @if (filled($account_number ?? null))
-                        <td>
-                            <div class="pay-key">Account number</div>
-                            <div class="pay-val">{{ $account_number }}</div>
-                        </td>
-                    @endif
-                    @if (filled($iban ?? null))
-                        <td>
-                            <div class="pay-key">IBAN / SWIFT</div>
-                            <div class="pay-val">{{ $iban }}</div>
-                        </td>
-                    @endif
-                </tr>
-                </table>
-            </td>
+            <td style="color: #4A5866; padding: 2px 12px 2px 0;">Issue Date:</td>
+            <td style="color: #12202E; padding: 2px 0;">{{ $invoice_date }}</td>
         </tr>
-        </table>
-    @endif
-
-    {{-- ==================================================================
-         7. CLOSING ROW — notes (bullets) on the left, signature on the right
-         ================================================================== --}}
-    @if ($noteLines->isNotEmpty() || $hasSignature)
-        <div class="gap"></div>
-        <table class="closing" cellpadding="0" cellspacing="0">
+        @if (!empty($due_date))
         <tr>
-            {{-- Notes as a bullet list (one bullet per line break) --}}
-            <td class="{{ $hasSignature ? 'notes-cell' : '' }}">
-                @if ($noteLines->isNotEmpty())
-                    <table class="notes" cellpadding="0" cellspacing="0">
-                    <tr>
-                        <td>
-                            <div class="lbl">Notes</div>
-                            <ul class="notes-list">
-                                @foreach ($noteLines as $line)
-                                    <li>{{ $line }}</li>
-                                @endforeach
-                            </ul>
-                        </td>
-                    </tr>
-                    </table>
-                @endif
-            </td>
-
-            {{-- Signature block (blank signing line + bold name + grey title) --}}
-            @if ($hasSignature)
-                <td class="sign-cell">
-                    <div class="sign-line"></div>
-                    <div class="sign-name">{{ $signature_name }}</div>
-                    @if (filled($signature_title ?? null))
-                        <div class="sign-title">{{ $signature_title }}</div>
-                    @endif
-                </td>
-            @endif
+            <td style="color: #4A5866; padding: 2px 12px 2px 0;">Due Date:</td>
+            <td style="color: #12202E; padding: 2px 0;">{{ $due_date }}</td>
         </tr>
-        </table>
-    @endif
-
-    {{-- ==================================================================
-         8. FOOTER — thin line + centered grey thanks line (static flow)
-         ================================================================== --}}
-    <div class="footer">
-        <div class="thanks">Thank you for your business</div>
-        @if (filled($business_website ?? null))
-            <div>{{ $business_website }}</div>
         @endif
-    </div>
+        @if ($badgeLabel !== '')
+        <tr>
+            <td style="color: #4A5866; padding: 3px 12px 2px 0;">Status:</td>
+            <td style="padding: 3px 0;">
+                <span class="badge {{ $badgeClass }}">{{ $badgeLabel }}</span>
+            </td>
+        </tr>
+        @endif
+        </table>
+    </td>
+
+    {{-- Right: Total Amount Card box (web paper styling) --}}
+    <td style="width: 45%; vertical-align: top; text-align: right;">
+        <table align="right" cellpadding="0" cellspacing="0" class="card-box" style="border-collapse: separate; min-width: 200px;">
+        <tr>
+            <td style="padding: 10px 16px; text-align: left;">
+                <div style="font-size: 10px; font-weight: 600; color: #4A5866; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px;">
+                    Total Amount
+                </div>
+                <div style="font-size: 21px; font-weight: bold; color: #12202E; line-height: 1.1; white-space: nowrap;">
+                    {!! $money($totals['total']) !!}
+                </div>
+            </td>
+        </tr>
+        </table>
+    </td>
+</tr>
+</table>
+
+<div style="height: 16px;"></div>
+
+{{-- ====================================================================
+     3. BILL TO & FROM COLUMNS
+     ==================================================================== --}}
+<table cellpadding="0" cellspacing="0" style="width: 100%; page-break-inside: avoid;">
+<tr>
+    {{-- Bill To --}}
+    <td style="width: 50%; vertical-align: top; padding-right: 12px;">
+        <div style="font-size: 10px; font-weight: 600; color: #4A5866; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
+            Bill To
+        </div>
+        <div style="font-size: 13.5px; font-weight: bold; color: #12202E; margin-bottom: 5px;">
+            {{ $hasClient ? $client_name : '—' }}
+        </div>
+        @if (!empty($client_email))
+            <div style="font-size: 10px; color: #4A5866; margin-bottom: 2px;">
+                {!! $iconEmail !!}{{ $client_email }}
+            </div>
+        @endif
+        @if (!empty($client_phone))
+            <div style="font-size: 10px; color: #4A5866; margin-bottom: 2px;">
+                {!! $iconPhone !!}{{ $client_phone }}
+            </div>
+        @endif
+        @if (!empty($client_address))
+            <div style="font-size: 10px; color: #4A5866; margin-bottom: 2px;">
+                {!! $iconLocation !!}{{ $client_address }}
+            </div>
+        @endif
+    </td>
+
+    {{-- From --}}
+    <td style="width: 50%; vertical-align: top; padding-left: 12px;">
+        <div style="font-size: 10px; font-weight: 600; color: #4A5866; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
+            From
+        </div>
+        <div style="font-size: 13.5px; font-weight: bold; color: #12202E; margin-bottom: 5px;">
+            {{ $business_name }}
+        </div>
+        @if (!empty($business_address))
+            <div style="font-size: 10px; color: #4A5866; margin-bottom: 2px;">
+                {!! $iconLocation !!}{{ $business_address }}
+            </div>
+        @endif
+        @if (!empty($business_email))
+            <div style="font-size: 10px; color: #4A5866; margin-bottom: 2px;">
+                {!! $iconEmail !!}{{ $business_email }}
+            </div>
+        @endif
+        @if (filled($business_website ?? null))
+            <div style="font-size: 10px; color: #4A5866; margin-bottom: 2px;">
+                {!! $iconGlobe !!}{{ $business_website }}
+            </div>
+        @endif
+        @if (!empty($business_phone))
+            <div style="font-size: 10px; color: #4A5866; margin-bottom: 2px;">
+                {!! $iconPhone !!}{{ $business_phone }}
+            </div>
+        @endif
+    </td>
+</tr>
+</table>
+
+<div style="height: 14px;"></div>
+
+{{-- ====================================================================
+     4. ITEMS TABLE (Navy Dark Header, Clean Content Rows)
+     ==================================================================== --}}
+<table cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+    <thead>
+    <tr style="background-color: #12202E; color: #FFFFFF;">
+        <th style="width: 6%; text-align: center; padding: 8px 6px; font-size: 10px; font-weight: 600;">#</th>
+        <th style="width: 48%; text-align: left; padding: 8px 10px; font-size: 10px; font-weight: 600;">Item Description</th>
+        <th style="width: 12%; text-align: center; padding: 8px 6px; font-size: 10px; font-weight: 600;">Quantity</th>
+        <th style="width: 17%; text-align: right; padding: 8px 10px; font-size: 10px; font-weight: 600;">Unit Price</th>
+        <th style="width: 17%; text-align: right; padding: 8px 10px; font-size: 10px; font-weight: 600;">Total</th>
+    </tr>
+    </thead>
+    <tbody>
+    @forelse ($items as $it)
+        <tr style="border-bottom: 1px solid #E8EAF0; page-break-inside: avoid;">
+            <td style="text-align: center; padding: 8px 6px; font-weight: bold; color: #12202E; vertical-align: top;">
+                {{ $loop->iteration }}
+            </td>
+            <td style="text-align: left; padding: 8px 10px; vertical-align: top;">
+                <div style="font-weight: bold; color: #12202E; font-size: 11px;">
+                    {{ $it['description'] }}
+                </div>
+                @if (filled($it['details'] ?? null))
+                    <div style="color: #4A5866; font-size: 9.5px; margin-top: 2px; line-height: 1.3;">
+                        {{ $it['details'] }}
+                    </div>
+                @endif
+            </td>
+            <td style="text-align: center; padding: 8px 6px; color: #12202E; vertical-align: top;">
+                {{ $it['quantity'] }}
+            </td>
+            <td style="text-align: right; padding: 8px 10px; color: #12202E; vertical-align: top; white-space: nowrap;">
+                {!! $money($it['price']) !!}
+            </td>
+            <td style="text-align: right; padding: 8px 10px; font-weight: bold; color: #12202E; vertical-align: top; white-space: nowrap;">
+                {!! $money($it['line_total']) !!}
+            </td>
+        </tr>
+    @empty
+        <tr>
+            <td colspan="5" style="text-align: center; padding: 14px; color: #4A5866; font-style: italic; border-bottom: 1px solid #E8EAF0;">
+                No items on this invoice.
+            </td>
+        </tr>
+    @endforelse
+    </tbody>
+</table>
+
+<div style="height: 14px;"></div>
+
+{{-- ====================================================================
+     5. PAYMENT DETAILS (Left) & TOTALS CALCULATION (Right)
+     ==================================================================== --}}
+<table cellpadding="0" cellspacing="0" style="width: 100%; page-break-inside: avoid;">
+<tr>
+    {{-- Left: Payment Details Card --}}
+    <td style="width: 50%; vertical-align: top; padding-right: 12px;">
+        @if ($hasPayment)
+            <table cellpadding="0" cellspacing="0" class="card-box" style="width: 100%;">
+            <tr>
+                <td style="padding: 10px 12px;">
+                    <div style="font-size: 11.5px; font-weight: bold; color: #12202E; margin-bottom: 6px;">
+                        Payment Details
+                    </div>
+                    <table cellpadding="0" cellspacing="0" style="width: 100%; font-size: 10px;">
+                        @if (filled($bank_name ?? null))
+                        <tr>
+                            <td style="color: #4A5866; padding: 2px 0; width: 44%;">Bank Name:</td>
+                            <td style="font-weight: 600; color: #12202E; padding: 2px 0;">{{ $bank_name }}</td>
+                        </tr>
+                        @endif
+                        @if (filled($account_title ?? null))
+                        <tr>
+                            <td style="color: #4A5866; padding: 2px 0;">Account Title:</td>
+                            <td style="font-weight: 600; color: #12202E; padding: 2px 0;">{{ $account_title }}</td>
+                        </tr>
+                        @endif
+                        @if (filled($account_number ?? null))
+                        <tr>
+                            <td style="color: #4A5866; padding: 2px 0;">Account Number:</td>
+                            <td style="font-weight: 600; color: #12202E; padding: 2px 0;">{{ $account_number }}</td>
+                        </tr>
+                        @endif
+                        @if (filled($iban ?? null))
+                        <tr>
+                            <td style="color: #4A5866; padding: 2px 0;">IBAN:</td>
+                            <td style="font-weight: 600; color: #12202E; padding: 2px 0;">{{ $iban }}</td>
+                        </tr>
+                        @endif
+                        @if (filled($payment_method ?? null))
+                        <tr>
+                            <td style="color: #4A5866; padding: 2px 0;">Payment Method:</td>
+                            <td style="font-weight: 600; color: #12202E; padding: 2px 0;">{{ $payment_method }}</td>
+                        </tr>
+                        @endif
+                    </table>
+                </td>
+            </tr>
+            </table>
+        @endif
+    </td>
+
+    {{-- Right: Subtotal, Tax, Discount, Total Pill/Box --}}
+    <td style="width: 50%; vertical-align: top; padding-left: 12px;">
+        <table cellpadding="0" cellspacing="0" style="width: 100%; font-size: 10.5px;">
+            <tr>
+                <td style="color: #4A5866; padding: 2px 0; text-align: left;">Subtotal</td>
+                <td style="font-weight: bold; color: #12202E; padding: 2px 0; text-align: right; white-space: nowrap;">{!! $money($totals['subtotal']) !!}</td>
+            </tr>
+            @if ($taxPct > 0 || (float) $totals['tax'] > 0)
+            <tr>
+                <td style="color: #4A5866; padding: 2px 0; text-align: left;">{{ $taxLabel }}</td>
+                <td style="font-weight: bold; color: #12202E; padding: 2px 0; text-align: right; white-space: nowrap;">{!! $money($totals['tax']) !!}</td>
+            </tr>
+            @endif
+            @if ((float) $totals['discount'] > 0)
+            <tr>
+                <td style="color: #4A5866; padding: 2px 0; text-align: left;">Discount</td>
+                <td style="font-weight: bold; color: #12202E; padding: 2px 0; text-align: right; white-space: nowrap;">- {!! $money($totals['discount']) !!}</td>
+            </tr>
+            @endif
+            <tr>
+                <td colspan="2" style="padding-top: 6px;">
+                    <table cellpadding="0" cellspacing="0" class="card-box" style="width: 100%;">
+                        <tr>
+                            <td style="padding: 8px 12px; font-size: 12px; font-weight: bold; color: #12202E; text-align: left;">
+                                Total
+                            </td>
+                            <td style="padding: 8px 12px; font-size: 15px; font-weight: bold; color: #12202E; text-align: right; white-space: nowrap;">
+                                {!! $money($totals['total']) !!}
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </td>
+</tr>
+</table>
+
+<div style="height: 14px;"></div>
+
+{{-- ====================================================================
+     6. NOTES & SIGNATURE SECTION
+     ==================================================================== --}}
+@if ($noteLines->isNotEmpty() || $hasSignature)
+<table cellpadding="0" cellspacing="0" style="width: 100%; page-break-inside: avoid;">
+<tr>
+    {{-- Left: Notes with bullets --}}
+    <td style="width: 60%; vertical-align: top; padding-right: 16px;">
+        @if ($noteLines->isNotEmpty())
+            <div style="font-size: 11px; font-weight: bold; color: #12202E; margin-bottom: 4px;">
+                {!! $iconNotes !!}Notes
+            </div>
+            <ul style="margin: 0; padding-left: 16px; color: #4A5866; font-size: 10px; line-height: 1.45;">
+                @foreach ($noteLines as $line)
+                    <li style="margin-bottom: 2px;">{{ $line }}</li>
+                @endforeach
+            </ul>
+        @endif
+    </td>
+
+    {{-- Right: Handwritten Signature Block --}}
+    <td style="width: 40%; vertical-align: top; text-align: right;">
+        @if ($hasSignature)
+            <table align="right" cellpadding="0" cellspacing="0" style="width: 180px; text-align: center;">
+            <tr>
+                <td>
+                    <div style="font-family: 'Brush Script MT', 'DejaVu Serif', cursive; font-style: italic; font-size: 22px; color: #12202E; line-height: 1.1; margin-bottom: 3px;">
+                        {{ $signature_name }}
+                    </div>
+                    <div style="border-top: 1px solid #94A3B8; margin: 3px 0 5px 0;"></div>
+                    <div style="font-weight: bold; font-size: 10.5px; color: #12202E;">
+                        {{ $signature_name }}
+                    </div>
+                    @if (filled($signature_title ?? null))
+                        <div style="font-size: 9.5px; color: #4A5866; margin-top: 1px;">
+                            {{ $signature_title }}
+                        </div>
+                    @endif
+                </td>
+            </tr>
+            </table>
+        @endif
+    </td>
+</tr>
+</table>
+@endif
+
+<div style="height: 16px;"></div>
+
+{{-- ====================================================================
+     7. FOOTER: Thank You Message (Left) & QR Code (Right)
+     ==================================================================== --}}
+<table cellpadding="0" cellspacing="0" style="width: 100%; border-top: 1px solid #EAE3D2; padding-top: 10px; page-break-inside: avoid;">
+<tr>
+    <td style="font-size: 10px; color: #4A5866; vertical-align: middle;">
+        Thank you for choosing {{ filled($business_name ?? null) && $business_name !== 'Your business' ? $business_name : 'InvoiceFlow' }}!
+    </td>
+    <td style="text-align: right; vertical-align: middle;">
+        <table align="right" cellpadding="0" cellspacing="0">
+        <tr>
+            <td style="padding-right: 6px; vertical-align: middle;">
+                {{-- Clean fallback QR block --}}
+                <div style="width: 28px; height: 28px; border: 2px solid #12202E; padding: 2px;">
+                    <div style="width: 8px; height: 8px; background: #12202E; float: left;"></div>
+                    <div style="width: 8px; height: 8px; background: #12202E; float: right;"></div>
+                    <div style="width: 8px; height: 8px; background: #12202E; margin-top: 12px;"></div>
+                </div>
+            </td>
+            <td style="font-size: 8.5px; color: #4A5866; line-height: 1.2; text-align: left; vertical-align: middle;">
+                Scan to<br>view online
+            </td>
+        </tr>
+        </table>
+    </td>
+</tr>
+</table>
 
 </div>{{-- /.wrap --}}
-</div>{{-- /.sheet --}}
+
 </body>
 </html>
