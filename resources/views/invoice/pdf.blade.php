@@ -4,9 +4,11 @@
     Redesigned to match the requested modern invoice layout with web colors.
 
     DomPDF stability guarantees:
+      - ZERO external/PNG image dependency unless GD is verified active,
+        completely eliminating the Cpdf.php:6226 "PHP GD extension is required" error.
       - Page margin 0 with strict inner padding (.wrap) so text NEVER clips off-canvas.
       - No CSS floats (align="right" tables used instead).
-      - Self-contained base64 PNG icons so rendering is 100% reliable.
+      - DejaVu Sans native unicode vector glyphs for icons (100% reliable).
       - white-space: nowrap on amounts so currency and numbers never break across lines.
     ==========================================================================
 --}}
@@ -75,8 +77,11 @@
     // Money formatter: symbol + 2 decimals with non-breaking space
     $money = fn ($v) => $currency_symbol . '&nbsp;' . number_format((float) $v, 2);
 
-    // Logo check
-    $logoOk = !empty($logo_data) && is_string($logo_data)
+    // Strictly check if GD is available in this PHP process before attempting any <img> tag
+    $canRenderImages = extension_loaded('gd') && function_exists('imagecreatefrompng');
+
+    // Logo check (only render <img> if GD is available to prevent Cpdf:6226 crash)
+    $logoOk = $canRenderImages && !empty($logo_data) && is_string($logo_data)
               && str_starts_with(trim($logo_data), 'data:image/');
 
     // Status badge
@@ -112,13 +117,13 @@
         ->filter()
         ->values();
 
-    // High compatibility base64 PNG icons (11x11, #4A5866)
-    $iconLocation = '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAQ0lEQVQokWNgoDdgxCXhFZH2H8betmIWhjqsGpE14dKMoRGbJmyamXApIgTor5HswKGujei2YotHsm3EC/DFKdk2AgCKNRYZvXhr7wAAAABJRU5ErkJggg==" width="10" height="10" style="vertical-align: -1px; margin-right: 4px;" alt="">';
-    $iconEmail    = '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAJklEQVQokWNgGDKAkYGBgcErIu0/KZq2rZjFyESujaMaB5VG+gMAcJAEEuPhJwkAAAAASUVORK5CYII=" width="10" height="10" style="vertical-align: -1px; margin-right: 4px;" alt="">';
-    $iconGlobe    = '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAUklEQVQokWNgIBMw4pLwikj7D2NvWzELQx2GALIGdIBsAIpGfJrQNcM1EqMJWTMTsYrRASOptsEA2TZS5lQGBnoHDim2YsQjMZpxphxcBmBLqwBo3SIZ0HXk2wAAAABJRU5ErkJggg==" width="10" height="10" style="vertical-align: -1px; margin-right: 4px;" alt="">';
-    $iconPhone    = '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAJElEQVQokWNgIBMwInO8ItL+41O8bcUsuHomcm0c1Tiqkc4aAUREBBrzPRNyAAAAAElFTkSuQmCC" width="10" height="10" style="vertical-align: -1px; margin-right: 4px;" alt="">';
-    $iconUser     = '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAATUlEQVQokWNgIBMw4pLwikj7D2NvWzELQx1WjciacGnG0IhNEzbNTLgUEQJka6SeH7FpxhaqtAH4Qpjs6EDRiE8Tuma4RmI0IWsmOx4BhLYiFsjsozgAAAAASUVORK5CYII=" width="10" height="10" style="vertical-align: -1px; margin-right: 4px;" alt="">';
-    $iconNotes    = '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAI0lEQVQokWNgIBMwwhheEWn/idW0bcUsRiZybRzVOKqRzhoBPJgEGnwd5+AAAAAASUVORK5CYII=" width="12" height="12" style="vertical-align: -1px; margin-right: 4px;" alt="">';
+    // 100% reliable Unicode vector glyphs supported natively by DejaVu Sans (Zero GD requirement)
+    $iconLocation = '<span style="color: #4A5866; font-size: 9px; margin-right: 4px;">&#9679;</span>'; // ●
+    $iconEmail    = '<span style="color: #4A5866; font-size: 11px; margin-right: 4px;">&#9993;</span>'; // ✉
+    $iconGlobe    = '<span style="color: #4A5866; font-size: 10px; margin-right: 4px;">&#9678;</span>'; // ◎
+    $iconPhone    = '<span style="color: #4A5866; font-size: 11px; margin-right: 4px;">&#9742;</span>'; // ☎
+    $iconUser     = '<span style="color: #4A5866; font-size: 9px; margin-right: 4px;">&#9679;</span>'; // ●
+    $iconNotes    = '<span style="color: #12202E; font-size: 11px; margin-right: 4px;">&#9998;</span>'; // ✎
 @endphp
 
 <div class="wrap">
@@ -510,11 +515,11 @@
         <table align="right" cellpadding="0" cellspacing="0">
         <tr>
             <td style="padding-right: 6px; vertical-align: middle;">
-                {{-- Clean fallback QR block --}}
-                <div style="width: 28px; height: 28px; border: 2px solid #12202E; padding: 2px;">
-                    <div style="width: 8px; height: 8px; background: #12202E; float: left;"></div>
-                    <div style="width: 8px; height: 8px; background: #12202E; float: right;"></div>
-                    <div style="width: 8px; height: 8px; background: #12202E; margin-top: 12px;"></div>
+                {{-- Clean fallback QR block (pure HTML/CSS, zero image dependency) --}}
+                <div style="width: 26px; height: 26px; border: 2px solid #12202E; padding: 2px;">
+                    <div style="width: 7px; height: 7px; background: #12202E; float: left;"></div>
+                    <div style="width: 7px; height: 7px; background: #12202E; float: right;"></div>
+                    <div style="width: 7px; height: 7px; background: #12202E; margin-top: 11px;"></div>
                 </div>
             </td>
             <td style="font-size: 8.5px; color: #4A5866; line-height: 1.2; text-align: left; vertical-align: middle;">
