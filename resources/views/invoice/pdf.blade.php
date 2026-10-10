@@ -151,7 +151,7 @@
         vertical-align: middle;
         position: relative;
     }
-    /* Three white horizontal lines inside the blue square */
+    /* Three white horizontal lines inside the saffron square */
     .brand-logo-lines {
         text-align: center;
         padding-top: 13px;
@@ -368,7 +368,7 @@
     <td style="vertical-align: middle;">
         <table class="tbl-full" cellpadding="0" cellspacing="0">
         <tr>
-            {{-- Logo mark (blue square + 3 white lines) --}}
+            {{-- Logo mark (saffron square + 3 white lines) --}}
             <td style="width: 56px; vertical-align: middle;">
                 <div class="brand-logo">
                     <div class="brand-logo-lines">
