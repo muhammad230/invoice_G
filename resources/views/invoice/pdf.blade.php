@@ -434,22 +434,18 @@
 
     {{-- RIGHT: Invoice details (label : value, rows aligned) --}}
     <td style="vertical-align: top;">
-        <table class="tbl-full" cellpadding="0" cellspacing="0">
-        <colgroup>
-            <col style="width: 45%;">
-            <col style="width: 55%;">
-        </colgroup>
+        <table cellpadding="0" cellspacing="0" align="right" style="border-collapse: collapse;">
         <tr>
             <td class="meta-label" style="padding: 4px 10px 4px 0;">Invoice No:</td>
-            <td class="meta-value"  style="padding: 4px 0 4px 10px;">{{ $invoice_number }}</td>
+            <td class="meta-value"  style="padding: 4px 0 4px 0;">{{ $invoice_number }}</td>
         </tr>
         <tr>
             <td class="meta-label" style="padding: 4px 10px 4px 0;">Issue Date:</td>
-            <td class="meta-value"  style="padding: 4px 0 4px 10px;">{{ $invoice_date }}</td>
+            <td class="meta-value"  style="padding: 4px 0 4px 0;">{{ $invoice_date }}</td>
         </tr>
         <tr>
             <td class="meta-label" style="padding: 4px 10px 4px 0;">Due Date:</td>
-            <td class="meta-value"  style="padding: 4px 0 4px 10px;">
+            <td class="meta-value"  style="padding: 4px 0 4px 0;">
                 @if (!empty($due_date))
                     {{ $due_date }}
                 @else
