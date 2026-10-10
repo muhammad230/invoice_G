@@ -1,7 +1,7 @@
 {{--
-    Invoice PDF template (DomPDF) - Minimal SaaS Blue/White style.
-    Matches the user's reference design: white background, #2563eb primary,
-    #eff6ff light-blue highlights, sans-serif typography, clean layout.
+    Invoice PDF template (DomPDF) - Minimal Paper Ledger style.
+    Matches the InvoiceFlow website theme: #FAF6EE paper background,
+    #12202E ink primary, #F2A33A / #C97F14 saffron accents.
 
     DomPDF rules we must obey:
       - No flexbox / grid. Use table + float.
@@ -31,11 +31,11 @@
     html, body {
         margin: 0;
         padding: 0;
-        background-color: #FFFFFF;
+        background-color: #FAF6EE;
     }
 
     body {
-        color: #1E293B;
+        color: #12202E;
         font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
         font-size: 11px;
         line-height: 1.45;
@@ -43,7 +43,7 @@
 
     td, th, p, div, li, span {
         font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
-        color: #1E293B;
+        color: #12202E;
         font-size: 11px;
         line-height: 1.45;
     }
@@ -68,25 +68,25 @@
     .cell-wrap { word-wrap: break-word; }
     .money    { text-align: right; white-space: nowrap; }
 
-    /* ---------- Brand palette (SaaS blue) ---------- */
-    .brand-blue       { color: #2563EB; }
-    .brand-blue-bg    { background-color: #2563EB; }
-    .brand-blue-soft  { background-color: #EFF6FF; }
-    .brand-ink        { color: #1E293B; }
-    .brand-muted      { color: #64748B; }
+    /* ---------- Brand palette (Paper Ledger) ---------- */
+    .brand-blue       { color: #C97F14; }
+    .brand-blue-bg    { background-color: #F2A33A; }
+    .brand-blue-soft  { background-color: #FAF6EE; }
+    .brand-ink        { color: #12202E; }
+    .brand-muted      { color: #4A5866; }
 
     /* ---------- Typography ---------- */
     .brand-name {
         font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
         font-weight: bold;
-        color: #1E293B;
+        color: #12202E;
         letter-spacing: -0.3px;
         line-height: 1;
     }
-    .brand-name .accent { color: #2563EB; }
+    .brand-name .accent { color: #C97F14; }
 
     .tagline {
-        color: #64748B;
+        color: #4A5866;
         font-size: 9.5px;
         letter-spacing: 0.2px;
         line-height: 1.2;
@@ -96,14 +96,14 @@
     .invoice-title {
         font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
         font-weight: bold;
-        color: #0F172A;
+        color: #12202E;
         letter-spacing: -0.5px;
         line-height: 1;
         font-size: 36px;
     }
 
     .section-label {
-        color: #334155;
+        color: #12202E;
         font-weight: bold;
         font-size: 12px;
         letter-spacing: 0.1px;
@@ -111,7 +111,7 @@
     }
 
     .client-name {
-        color: #0F172A;
+        color: #12202E;
         font-weight: bold;
         font-size: 13px;
         line-height: 1.3;
@@ -119,7 +119,7 @@
     }
 
     .client-line {
-        color: #334155;
+        color: #4A5866;
         font-size: 11px;
         line-height: 1.45;
         font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
@@ -127,13 +127,13 @@
 
     /* ---------- Invoice meta (right upper) ---------- */
     .meta-label {
-        color: #475569;
+        color: #4A5866;
         font-size: 10.5px;
         text-align: left;
         font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
     }
     .meta-value {
-        color: #0F172A;
+        color: #12202E;
         font-weight: bold;
         font-size: 11px;
         text-align: right;
@@ -141,11 +141,11 @@
         font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
     }
 
-    /* ---------- Brand logo (blue square + 3 lines) ---------- */
+    /* ---------- Brand logo (saffron square + 3 lines) ---------- */
     .brand-logo {
         width: 44px;
         height: 44px;
-        background-color: #2563EB;
+        background-color: #F2A33A;
         border-radius: 8px;
         text-align: center;
         vertical-align: middle;
@@ -169,17 +169,17 @@
         border-collapse: collapse;
         table-layout: fixed;
         width: 100%;
-        border: 1px solid #E2E8F0;
+        border: 1px solid #EAE3D2;
         border-radius: 6px;
     }
     .items thead th {
-        background-color: #EFF6FF;
-        color: #1E293B;
+        background-color: #FAF6EE;
+        color: #12202E;
         font-weight: bold;
         font-size: 11px;
         letter-spacing: 0.1px;
         text-align: left;
-        border-bottom: 1px solid #DBEAFE;
+        border-bottom: 1px solid #EAE3D2;
         padding: 10px 10px;
         font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
     }
@@ -188,8 +188,8 @@
 
     .items tbody td {
         padding: 10px 10px;
-        border-bottom: 1px solid #E2E8F0;
-        color: #1E293B;
+        border-bottom: 1px solid #EAE3D2;
+        color: #12202E;
         font-size: 11px;
         vertical-align: top;
         font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
@@ -200,14 +200,14 @@
     .items tbody tr:last-child td { border-bottom: none; }
 
     .item-name {
-        color: #0F172A;
+        color: #12202E;
         font-weight: 600;
         font-size: 11px;
         line-height: 1.35;
         font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
     }
     .item-details {
-        color: #64748B;
+        color: #4A5866;
         font-size: 9.5px;
         line-height: 1.35;
         margin-top: 2px;
@@ -229,13 +229,13 @@
         vertical-align: middle;
     }
     .totals-tbl td.lbl {
-        color: #334155;
+        color: #4A5866;
         font-size: 11px;
         text-align: left;
         font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
     }
     .totals-tbl td.val {
-        color: #0F172A;
+        color: #12202E;
         font-size: 11px;
         font-weight: bold;
         text-align: right;
@@ -243,16 +243,16 @@
         font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
     }
     .totals-tbl tr.total td {
-        background-color: #EFF6FF;
+        background-color: #FAF6EE;
         padding: 9px 12px;
     }
     .totals-tbl tr.total td.lbl {
-        color: #1E3A8A;
+        color: #C97F14;
         font-weight: bold;
         font-size: 12px;
     }
     .totals-tbl tr.total td.val {
-        color: #1E293B;
+        color: #12202E;
         font-size: 14px;
     }
     .totals-tbl tr.above-total td {
@@ -261,14 +261,14 @@
 
     /* ---------- Notes ---------- */
     .notes-title {
-        color: #0F172A;
+        color: #12202E;
         font-weight: bold;
         font-size: 13px;
         letter-spacing: 0.1px;
         font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
     }
     .notes-body {
-        color: #475569;
+        color: #4A5866;
         font-size: 11px;
         line-height: 1.5;
         font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
@@ -277,7 +277,7 @@
     /* ---------- Footer divider ---------- */
     .soft-divider {
         height: 1px;
-        background-color: #DBEAFE;
+        background-color: #F2A33A;
         line-height: 1px;
     }
 
@@ -287,14 +287,14 @@
         vertical-align: middle;
     }
     .contact-icon {
-        color: #2563EB;
+        color: #C97F14;
         font-size: 13px;
         width: 20px;
         text-align: center;
         vertical-align: middle;
     }
     .contact-text {
-        color: #334155;
+        color: #4A5866;
         font-size: 10.5px;
         padding-left: 4px;
         vertical-align: middle;
@@ -304,19 +304,19 @@
     .signature-name {
         font-family: 'DejaVu Serif', Georgia, serif;
         font-style: italic;
-        color: #1E3A8A;
+        color: #12202E;
         font-size: 18px;
         line-height: 1.1;
         letter-spacing: 0.4px;
         text-align: right;
     }
     .signature-line {
-        border-top: 1.5px solid #CBD5E1;
+        border-top: 1.5px solid #12202E;
         width: 190px;
         margin: 6px 0 6px auto;
     }
     .signature-title {
-        color: #64748B;
+        color: #4A5866;
         font-size: 9.5px;
         letter-spacing: 0.2px;
         text-align: right;
