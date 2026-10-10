@@ -1,15 +1,21 @@
 {{--
-    Invoice PDF template (DomPDF) - Paper Ledger theme, redesigned.
-    DomPDF compatibility rules:
-      - @page sets page margins; NO wrapper div with padding + width:100%
-      - Width-bearing <td>s have ZERO padding/margin/border
-      - Padding lives ONLY on inner (non-width-bearing) wrappers
-      - Every <table> with columns has explicit % widths summing to exactly 100%
-      - No box-sizing, no width:100% on anything with padding/border/margin
+    Invoice PDF template (DomPDF) - Minimal SaaS Blue/White style.
+    Matches the user's reference design: white background, #2563eb primary,
+    #eff6ff light-blue highlights, sans-serif typography, clean layout.
 
-    Design tokens (from web style.css):
-      --paper #FAF6EE   --ink #12202E   --ink-soft #4A5866
-      --saffron #F2A33A --saffron-dark #C97F14   --sage #3F6B50
+    DomPDF rules we must obey:
+      - No flexbox / grid. Use table + float.
+      - Tables with columns use explicit % widths summing to exactly 100%.
+      - @page sets page margins; no wrapper div with padding + width:100%.
+      - DejaVu Sans + DejaVu Serif only (no external fonts).
+
+    Data contract (passed from InvoiceController@download, unchanged):
+      business_name, business_email, business_phone, business_address,
+      business_website, business_tagline, bank_name, account_title,
+      account_number, iban, payment_method, signature_name, signature_title,
+      client_name, client_email, client_phone, client_address,
+      invoice_number, invoice_date, due_date, status, currency,
+      currency_symbol, items[], totals[], notes, logo_data.
 --}}
 <!DOCTYPE html>
 <html lang="en">
@@ -19,7 +25,7 @@
 <style>
     @page {
         size: A4 portrait;
-        margin: 30px 38px;
+        margin: 28px 36px;
     }
 
     html, body {
@@ -29,20 +35,20 @@
     }
 
     body {
-        color: #12202E;
+        color: #1E293B;
         font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
         font-size: 11px;
-        line-height: 1.4;
+        line-height: 1.45;
     }
 
-    td, th, p, div, li {
+    td, th, p, div, li, span {
         font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
-        color: #12202E;
+        color: #1E293B;
         font-size: 11px;
-        line-height: 1.4;
+        line-height: 1.45;
     }
 
-    /* ---------- Structural table layers ---------- */
+    /* ---------- Reusable table primitives ---------- */
     .tbl {
         border-collapse: collapse;
         table-layout: fixed;
@@ -53,340 +59,280 @@
         table-layout: auto;
         width: auto;
     }
-    .tbl-full-inner {
+    .tbl-full {
         border-collapse: collapse;
         table-layout: fixed;
         width: 100%;
     }
 
-    .text-cell { word-wrap: break-word; }
-    .money     { text-align: right; white-space: nowrap; }
+    .cell-wrap { word-wrap: break-word; }
+    .money    { text-align: right; white-space: nowrap; }
 
-    /* ---------- Brand mark + theme palette ---------- */
-    .brand-ink    { color: #12202E; }
-    .brand-soft   { color: #4A5866; }
-    .brand-saffron{ color: #C97F14; }
-    .brand-sage   { color: #3F6B50; }
-    .saffron-bar  { background-color: #F2A33A; }
-    .ink-bar      { background-color: #12202E; }
-    .paper-bg     { background-color: #FAF6EE; }
+    /* ---------- Brand palette (SaaS blue) ---------- */
+    .brand-blue       { color: #2563EB; }
+    .brand-blue-bg    { background-color: #2563EB; }
+    .brand-blue-soft  { background-color: #EFF6FF; }
+    .brand-ink        { color: #1E293B; }
+    .brand-muted      { color: #64748B; }
 
-    /* Brand chip (saffron circle with ink letter — like web .logo-icon) */
-    .brand-chip {
-        width: 34px;
-        height: 34px;
-        background-color: #F2A33A;
-        border-radius: 50%;
-        text-align: center;
-        line-height: 34px;
-        color: #FFFFFF;
-        font-weight: bold;
-        font-size: 15px;
-        font-family: 'DejaVu Serif', Georgia, serif;
-    }
-
-    /* ---------- Section labels (like web .section-label pill) ---------- */
-    .section-pill {
-        display: inline-block;
-        background-color: rgba(242, 163, 58, 0.16);
-        color: #C97F14;
-        padding: 2px 10px;
-        border-radius: 999px;
-        font-size: 9px;
-        font-weight: bold;
-        letter-spacing: 0.6px;
-        text-transform: uppercase;
+    /* ---------- Typography ---------- */
+    .brand-name {
         font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
-    }
-
-    /* ---------- Typography tiers ---------- */
-    .display-title {
-        font-family: 'DejaVu Serif', Georgia, serif;
         font-weight: bold;
-        color: #12202E;
-        letter-spacing: -0.5px;
+        color: #1E293B;
+        letter-spacing: -0.3px;
         line-height: 1;
     }
-    .display-money {
-        font-family: 'DejaVu Serif', Georgia, serif;
-        font-weight: bold;
-        color: #12202E;
-        line-height: 1.05;
-        white-space: nowrap;
-    }
-    .subtitle {
-        color: #4A5866;
+    .brand-name .accent { color: #2563EB; }
+
+    .tagline {
+        color: #64748B;
         font-size: 9.5px;
-        letter-spacing: 1px;
-        text-transform: uppercase;
-        font-weight: bold;
+        letter-spacing: 0.2px;
+        line-height: 1.2;
         font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
     }
+
+    .invoice-title {
+        font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
+        font-weight: bold;
+        color: #0F172A;
+        letter-spacing: -0.5px;
+        line-height: 1;
+        font-size: 36px;
+    }
+
+    .section-label {
+        color: #334155;
+        font-weight: bold;
+        font-size: 12px;
+        letter-spacing: 0.1px;
+        font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
+    }
+
+    .client-name {
+        color: #0F172A;
+        font-weight: bold;
+        font-size: 13px;
+        line-height: 1.3;
+        font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
+    }
+
+    .client-line {
+        color: #334155;
+        font-size: 11px;
+        line-height: 1.45;
+        font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
+    }
+
+    /* ---------- Invoice meta (right upper) ---------- */
     .meta-label {
-        color: #4A5866;
-        font-size: 9.5px;
+        color: #475569;
+        font-size: 10.5px;
+        text-align: left;
         font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
     }
     .meta-value {
-        color: #12202E;
-        font-weight: bold;
-        font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
-    }
-
-    /* ---------- Status badges ---------- */
-    .badge {
-        display: inline-block;
-        font-size: 9px;
-        font-weight: bold;
-        letter-spacing: 0.6px;
-        text-transform: uppercase;
-        padding: 3px 9px;
-        border-radius: 999px;
-        font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
-    }
-    .badge-paid    { color: #FFFFFF; background: #3F6B50; }
-    .badge-pending { color: #FFFFFF; background: #C97F14; }
-    .badge-overdue { color: #FFFFFF; background: #B3372F; }
-    .badge-draft   { color: #FFFFFF; background: #4A5866; }
-
-    /* ---------- Items table ---------- */
-    .items thead th {
-        color: #FFFFFF;
-        background-color: #12202E;
-        font-size: 10px;
-        font-weight: bold;
-        letter-spacing: 0.3px;
-        text-transform: uppercase;
-        font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
-    }
-    /* leftmost and rightmost header corners rounded (visual only; DomPDF may ignore) */
-    .items thead th:first-child { border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
-    .items thead th:last-child  { border-top-right-radius: 6px; border-bottom-right-radius: 6px; }
-
-    .items tbody tr.row-odd  td { background-color: #FFFFFF; }
-    .items tbody tr.row-even td { background-color: #FAF6EE; }
-
-    .items tbody td {
-        border-bottom: 1px solid #EAE3D2;
-        font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
-    }
-
-    /* ---------- Accent card (Paper Ledger panel) ---------- */
-    .ledger-card {
-        background-color: #FAF6EE;
-        border: 1px solid #EAE3D2;
-        border-radius: 8px;
-        position: relative;
-    }
-    /* Saffron accent stripe down the left edge of the totals card */
-    .ledger-card-totals {
-        border-left: 4px solid #F2A33A;
-    }
-    /* Navy accent stripe down the left edge of the payment details card */
-    .ledger-card-payment {
-        border-left: 4px solid #12202E;
-    }
-    /* Saffron top bar for the total-amount hero card */
-    .hero-card {
-        background-color: #12202E;
-        color: #FFFFFF;
-        border-radius: 8px;
-        border: 1px solid #12202E;
-    }
-    .hero-card td, .hero-card div { color: #FFFFFF; }
-    .hero-card .subtitle-hero {
-        color: #F2A33A;
-        font-size: 10px;
-        letter-spacing: 1.2px;
-        text-transform: uppercase;
-        font-weight: bold;
-        font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
-    }
-    .hero-card .money-hero {
-        font-family: 'DejaVu Serif', Georgia, serif;
-        font-weight: bold;
-        color: #FFFFFF;
-        line-height: 1.05;
-        white-space: nowrap;
-        font-size: 22px;
-    }
-    .hero-card .money-hero-sym {
-        color: #F2A33A;
-        font-size: 16px;
-        vertical-align: 4px;
-        margin-right: 2px;
-        font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
-        font-weight: bold;
-    }
-
-    /* ---------- Meta rows (invoice no / date / due / status) ---------- */
-    .meta-row-label {
-        background-color: rgba(242, 163, 58, 0.14);
-        color: #C97F14;
-        font-size: 9.5px;
-        font-weight: bold;
-        letter-spacing: 0.6px;
-        text-transform: uppercase;
-        font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
-        border-radius: 4px;
-    }
-
-    /* ---------- Totals breakdown rows ---------- */
-    .totals-label {
-        color: #4A5866;
-        font-size: 10.5px;
-        font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
-    }
-    .totals-value {
-        color: #12202E;
-        font-weight: bold;
-        font-size: 10.5px;
-        font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
-    }
-    .totals-final-label {
-        color: #FFFFFF;
-        font-size: 12px;
-        font-weight: bold;
-        letter-spacing: 0.8px;
-        text-transform: uppercase;
-        font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
-    }
-    .totals-final-value {
-        font-family: 'DejaVu Serif', Georgia, serif;
-        color: #FFFFFF;
-        font-weight: bold;
-        line-height: 1.05;
-        white-space: nowrap;
-        font-size: 17px;
-    }
-
-    /* ---------- Dividers ---------- */
-    .divider-ink {
-        height: 1px;
-        background-color: #12202E;
-        line-height: 1px;
-    }
-    .divider-saffron {
-        height: 2px;
-        background-color: #F2A33A;
-        line-height: 2px;
-    }
-    .divider-soft {
-        height: 1px;
-        background-color: #EAE3D2;
-        line-height: 1px;
-    }
-
-    /* ---------- "Bill To / From" panel style ---------- */
-    .party-name {
-        font-family: 'DejaVu Serif', Georgia, serif;
-        color: #12202E;
-        font-weight: bold;
-        font-size: 14px;
-        line-height: 1.2;
-    }
-    .party-label-pill {
-        display: inline-block;
-        background-color: #12202E;
-        color: #FFFFFF;
-        padding: 2px 9px;
-        border-radius: 999px;
-        font-size: 9px;
-        font-weight: bold;
-        letter-spacing: 1px;
-        text-transform: uppercase;
-        font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
-    }
-    .party-label-pill.saffron {
-        background-color: #C97F14;
-    }
-
-    /* ---------- Footer ---------- */
-    .footer-rule {
-        border-top: 2px solid #12202E;
-    }
-    .footer-saffron-rule {
-        border-top: 3px solid #F2A33A;
-        border-radius: 2px;
-    }
-    .footer-text {
-        color: #4A5866;
-        font-size: 9.5px;
-        font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
-    }
-    .footer-brand {
-        color: #C97F14;
-        font-size: 9.5px;
-        font-weight: bold;
-        letter-spacing: 0.5px;
-        text-transform: uppercase;
-        font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
-    }
-
-    /* ---------- Signature ---------- */
-    .signature-line {
-        border-top: 1.5px solid #12202E;
-        width: 180px;
-        margin-left: auto;
-    }
-    .signature-name {
-        font-family: 'DejaVu Serif', Georgia, serif;
-        color: #12202E;
+        color: #0F172A;
         font-weight: bold;
         font-size: 11px;
-        line-height: 1.2;
-    }
-    .signature-title {
-        color: #4A5866;
-        font-size: 9.5px;
+        text-align: right;
+        white-space: nowrap;
         font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
     }
 
-    /* ---------- Notes list ---------- */
-    .notes-list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-    .notes-list li {
-        padding: 2px 0 2px 14px;
+    /* ---------- Brand logo (blue square + 3 lines) ---------- */
+    .brand-logo {
+        width: 44px;
+        height: 44px;
+        background-color: #2563EB;
+        border-radius: 8px;
+        text-align: center;
+        vertical-align: middle;
         position: relative;
-        color: #4A5866;
-        font-size: 10px;
+    }
+    /* Three white horizontal lines inside the blue square */
+    .brand-logo-lines {
+        text-align: center;
+        padding-top: 13px;
+    }
+    .brand-logo-lines div {
+        width: 22px;
+        height: 3px;
+        background-color: #FFFFFF;
+        margin: 2px auto 0 auto;
+        border-radius: 1px;
+    }
+
+    /* ---------- Items table ---------- */
+    .items {
+        border-collapse: collapse;
+        table-layout: fixed;
+        width: 100%;
+        border: 1px solid #E2E8F0;
+        border-radius: 6px;
+    }
+    .items thead th {
+        background-color: #EFF6FF;
+        color: #1E293B;
+        font-weight: bold;
+        font-size: 11px;
+        letter-spacing: 0.1px;
+        text-align: left;
+        border-bottom: 1px solid #DBEAFE;
+        padding: 10px 10px;
         font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
     }
-    .notes-list li::before {
-        /* Saffron diamond bullet (Unicode, DejaVu Sans supported) */
-        content: "\25B8";
-        color: #C97F14;
-        position: absolute;
-        left: 0;
-        top: 2px;
-        font-size: 9px;
+    .items thead th.center { text-align: center; }
+    .items thead th.money  { text-align: right;  }
+
+    .items tbody td {
+        padding: 10px 10px;
+        border-bottom: 1px solid #E2E8F0;
+        color: #1E293B;
+        font-size: 11px;
+        vertical-align: top;
+        font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
     }
+    .items tbody td.center   { text-align: center; }
+    .items tbody td.money    { text-align: right; white-space: nowrap; }
+
+    .items tbody tr:last-child td { border-bottom: none; }
+
+    .item-name {
+        color: #0F172A;
+        font-weight: 600;
+        font-size: 11px;
+        line-height: 1.35;
+        font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
+    }
+    .item-details {
+        color: #64748B;
+        font-size: 9.5px;
+        line-height: 1.35;
+        margin-top: 2px;
+        font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
+    }
+
+    /* ---------- Totals (right-aligned mini table under items) ---------- */
+    .totals-wrap {
+        width: 48%;
+        margin-left: 52%;
+    }
+    .totals-tbl {
+        border-collapse: collapse;
+        table-layout: fixed;
+        width: 100%;
+    }
+    .totals-tbl td {
+        padding: 6px 12px;
+        vertical-align: middle;
+    }
+    .totals-tbl td.lbl {
+        color: #334155;
+        font-size: 11px;
+        text-align: left;
+        font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
+    }
+    .totals-tbl td.val {
+        color: #0F172A;
+        font-size: 11px;
+        font-weight: bold;
+        text-align: right;
+        white-space: nowrap;
+        font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
+    }
+    .totals-tbl tr.total td {
+        background-color: #EFF6FF;
+        padding: 9px 12px;
+    }
+    .totals-tbl tr.total td.lbl {
+        color: #1E3A8A;
+        font-weight: bold;
+        font-size: 12px;
+    }
+    .totals-tbl tr.total td.val {
+        color: #1E293B;
+        font-size: 14px;
+    }
+    .totals-tbl tr.above-total td {
+        padding-bottom: 8px;
+    }
+
+    /* ---------- Notes ---------- */
+    .notes-title {
+        color: #0F172A;
+        font-weight: bold;
+        font-size: 13px;
+        letter-spacing: 0.1px;
+        font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
+    }
+    .notes-body {
+        color: #475569;
+        font-size: 11px;
+        line-height: 1.5;
+        font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
+    }
+
+    /* ---------- Footer divider ---------- */
+    .soft-divider {
+        height: 1px;
+        background-color: #DBEAFE;
+        line-height: 1px;
+    }
+
+    /* ---------- Footer: contact icons left / signature right ---------- */
+    .contact-row {
+        padding: 4px 0;
+        vertical-align: middle;
+    }
+    .contact-icon {
+        color: #2563EB;
+        font-size: 13px;
+        width: 20px;
+        text-align: center;
+        vertical-align: middle;
+    }
+    .contact-text {
+        color: #334155;
+        font-size: 10.5px;
+        padding-left: 4px;
+        vertical-align: middle;
+        font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
+    }
+
+    .signature-name {
+        font-family: 'DejaVu Serif', Georgia, serif;
+        font-style: italic;
+        color: #1E3A8A;
+        font-size: 18px;
+        line-height: 1.1;
+        letter-spacing: 0.4px;
+        text-align: right;
+    }
+    .signature-line {
+        border-top: 1.5px solid #CBD5E1;
+        width: 190px;
+        margin: 6px 0 6px auto;
+    }
+    .signature-title {
+        color: #64748B;
+        font-size: 9.5px;
+        letter-spacing: 0.2px;
+        text-align: right;
+        font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
+    }
+
+    /* ---------- Helpers ---------- */
+    .sp { line-height: 1px; height: 1px; }
 </style>
 </head>
 <body>
 
 @php
     $money = fn ($v) => $currency_symbol . '&nbsp;' . number_format((float) $v, 2);
-    $moneyHero = function ($v) use ($currency_symbol) {
-        $formatted = number_format((float) $v, 2);
-        return '<span class="money-hero-sym">' . $currency_symbol . '</span>' . $formatted;
-    };
-
-    $canRenderImages = extension_loaded('gd') && function_exists('imagecreatefrompng');
-    $logoOk = $canRenderImages && !empty($logo_data) && is_string($logo_data)
-              && str_starts_with(trim($logo_data), 'data:image/');
 
     $statusKey = strtolower(trim((string) ($status ?? '')));
-    [$badgeClass, $badgeLabel] = match ($statusKey) {
-        'paid'    => ['badge-paid', 'Paid'],
-        'pending' => ['badge-pending', 'Pending'],
-        'overdue' => ['badge-overdue', 'Overdue'],
-        'draft'   => ['badge-draft', 'Draft'],
-        default   => ['badge-draft', $statusKey === '' ? '' : ucfirst($statusKey)],
-    };
 
     $taxPct   = (float) ($totals['tax_pct'] ?? 0);
     $taxText  = rtrim(rtrim(number_format($taxPct, 2), '0'), '.');
@@ -394,561 +340,120 @@
 
     $hasClient = !empty($client_name) && trim($client_name) !== '—';
 
-    $hasPayment = collect([
-        $payment_method ?? null, $bank_name ?? null, $account_title ?? null,
-        $account_number ?? null, $iban ?? null,
-    ])->contains(fn ($v) => filled($v));
-
     $hasSignature = filled($signature_name ?? null);
 
     $noteLines = collect(preg_split('/\r\n|\r|\n/', (string) $notes))
         ->map(fn ($l) => trim($l))
         ->filter()
         ->values();
-@endphp
 
-{{-- spacer helper --}}
-@php
-    $sp = function ($px = 8) {
+    $displayBusinessTagline = filled($business_tagline ?? null)
+        ? $business_tagline
+        : 'Simple Invoices. Better Business.';
+
+    $sp = function ($px = 12) {
         echo '<table class="tbl-inner"><tr><td style="padding:' . $px . 'px 0 0 0;"></td></tr></table>';
     };
 @endphp
 
 {{-- ===========================================================
-     TOP BANNER: Saffron + navy accent + invoice no (unique strip)
+     TOP HEADER: Brand (logo + name + tagline) LEFT / "INVOICE" RIGHT
      =========================================================== --}}
 <table class="tbl" cellpadding="0" cellspacing="0">
 <colgroup>
-    <col style="width: 1.2%;">
-    <col style="width: 98.8%;">
+    <col style="width: 58%;">
+    <col style="width: 42%;">
 </colgroup>
 <tr>
-    <td style="vertical-align: top;">
-        <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
+    <td style="vertical-align: middle;">
+        <table class="tbl-full" cellpadding="0" cellspacing="0">
         <tr>
-            <td>
-                <div class="saffron-bar" style="width: 6px; height: 62px; border-radius: 3px;"></div>
+            {{-- Logo mark (blue square + 3 white lines) --}}
+            <td style="width: 56px; vertical-align: middle;">
+                <div class="brand-logo">
+                    <div class="brand-logo-lines">
+                        <div></div>
+                        <div style="width: 18px; margin-left: auto; margin-right: auto;"></div>
+                        <div style="width: 14px; margin-left: auto; margin-right: auto;"></div>
+                    </div>
+                </div>
+            </td>
+            {{-- Brand name + tagline --}}
+            <td style="vertical-align: middle; padding: 0 0 0 12px;" class="cell-wrap">
+                <div class="brand-name" style="font-size: 26px;">
+                    Invoice<span class="accent">Flow</span>
+                </div>
+                <div class="tagline" style="margin-top: 3px;">
+                    {!! $displayBusinessTagline !!}
+                </div>
             </td>
         </tr>
         </table>
     </td>
-    <td style="vertical-align: top;">
-        <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
-        <tr>
-            <td style="padding: 0 0 0 8px;">
 
-                {{-- ---------- Row 1: Header ---------- --}}
-                <table class="tbl" cellpadding="0" cellspacing="0">
-                <tr>
-                    <td style="width: 54%; vertical-align: top;">
-                        <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
-                        <tr>
-                            <td style="padding: 0 10px 0 0;" class="text-cell">
-                                @if ($logoOk)
-                                    <img src="{{ $logo_data }}" style="max-height: 44px; max-width: 170px; display: block;" alt="Logo">
-                                @else
-                                    <table class="tbl-inner" cellpadding="0" cellspacing="0">
-                                    <tr>
-                                        <td style="vertical-align: middle; padding: 0 8px 0 0;">
-                                            <div class="brand-chip">
-                                                {{ mb_strtoupper(mb_substr($business_name ?? 'I', 0, 1)) }}
-                                            </div>
-                                        </td>
-                                        <td style="vertical-align: middle; padding: 0;">
-                                            <div class="display-title" style="font-size: 19px;">
-                                                {{ $business_name }}
-                                            </div>
-                                            @if (filled($business_tagline ?? null))
-                                                <div style="font-size: 9px; color: #4A5866; margin-top: 2px; letter-spacing: 0.2px; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">
-                                                    {{ $business_tagline }}
-                                                </div>
-                                            @endif
-                                        </td>
-                                    </tr>
-                                    </table>
-                                @endif
-                            </td>
-                        </tr>
-                        </table>
-                    </td>
-
-                    {{-- Right side: contact details (faded, right-aligned, small) --}}
-                    <td style="width: 46%; vertical-align: top;">
-                        <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
-                        <tr>
-                            <td style="padding: 0 0 0 8px; text-align: right;" class="text-cell">
-                                <table class="tbl-inner" cellpadding="0" cellspacing="0" align="right">
-                                <tr>
-                                    <td style="text-align: right;">
-                                        @if (!empty($business_address))
-                                            <div style="font-size: 9px; color: #4A5866; margin-bottom: 2px; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif; line-height: 1.3;">
-                                                <span class="meta-label">Address:&nbsp;</span>{{ $business_address }}
-                                            </div>
-                                        @endif
-                                        @if (!empty($business_email))
-                                            <div style="font-size: 9px; color: #4A5866; margin-bottom: 2px; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif; line-height: 1.3;">
-                                                <span class="meta-label">Email:&nbsp;</span>{{ $business_email }}
-                                            </div>
-                                        @endif
-                                        @if (filled($business_website ?? null))
-                                            <div style="font-size: 9px; color: #4A5866; margin-bottom: 2px; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif; line-height: 1.3;">
-                                                <span class="meta-label">Web:&nbsp;</span>{{ $business_website }}
-                                            </div>
-                                        @endif
-                                        @if (!empty($business_phone))
-                                            <div style="font-size: 9px; color: #4A5866; margin-bottom: 0; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif; line-height: 1.3;">
-                                                <span class="meta-label">Phone:&nbsp;</span>{{ $business_phone }}
-                                            </div>
-                                        @endif
-                                    </td>
-                                </tr>
-                                </table>
-                            </td>
-                        </tr>
-                        </table>
-                    </td>
-                </tr>
-                </table>
-
-                {{$sp(6);}}
-                <table class="tbl-full-inner" cellpadding="0" cellspacing="0"><tr><td><div class="divider-saffron"></div></td></tr></table>
-                {{$sp(10);}}
-
-                {{-- ---------- Row 2: INVOICE title left + Navy hero card total right ---------- --}}
-                <table class="tbl" cellpadding="0" cellspacing="0">
-                <tr>
-                    <td style="width: 56%; vertical-align: middle;">
-                        <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
-                        <tr>
-                            <td style="padding: 0 10px 0 0;">
-                                <table class="tbl-inner" cellpadding="0" cellspacing="0">
-                                <tr>
-                                    <td style="padding: 0 0 6px 0;">
-                                        <span class="section-pill">Invoice</span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <div class="display-title" style="font-size: 28px; color: #12202E;">
-                                            INVOICE
-                                        </div>
-                                    </td>
-                                </tr>
-                                </table>
-
-                                {{$sp(8);}}
-
-                                <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
-                                <colgroup>
-                                    <col style="width: 38%;">
-                                    <col style="width: 62%;">
-                                </colgroup>
-                                <tr>
-                                    <td style="vertical-align: top;">
-                                        <div style="padding: 0 8px 0 0;">
-                                            <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
-                                            <tr>
-                                                <td style="padding: 4px 0;">
-                                                    <span class="meta-row-label" style="padding: 2px 7px;">Invoice No</span>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td style="padding: 2px 7px 4px 7px;">
-                                                    <span class="meta-value" style="font-size: 11px;">{{ $invoice_number }}</span>
-                                                </td>
-                                            </tr>
-                                            </table>
-                                        </div>
-                                    </td>
-                                    <td style="vertical-align: top;">
-                                        <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
-                                        <tr>
-                                            <td style="padding: 4px 0 4px 0;">
-                                                <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
-                                                <colgroup>
-                                                    <col style="width: 50%;">
-                                                    <col style="width: 50%;">
-                                                </colgroup>
-                                                <tr>
-                                                    <td style="vertical-align: top;">
-                                                        <div style="padding: 0 5px 0 0;">
-                                                            <span class="meta-label">Issue Date</span><br>
-                                                            <span class="meta-value" style="font-size: 10.5px;">{{ $invoice_date }}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td style="vertical-align: top;">
-                                                        <div style="padding: 0 0 0 5px;">
-                                                            <span class="meta-label">Due Date</span><br>
-                                                            @if (!empty($due_date))
-                                                                <span class="meta-value" style="font-size: 10.5px;">{{ $due_date }}</span>
-                                                            @else
-                                                                <span style="font-size: 10.5px; color: #4A5866; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">—</span>
-                                                            @endif
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                                </table>
-                                            </td>
-                                        </tr>
-                                        @if ($badgeLabel !== '')
-                                        <tr>
-                                            <td style="padding: 6px 0 0 0;">
-                                                <span class="meta-label">Status:&nbsp;</span>
-                                                <span class="badge {{ $badgeClass }}">{{ $badgeLabel }}</span>
-                                            </td>
-                                        </tr>
-                                        @endif
-                                        </table>
-                                    </td>
-                                </tr>
-                                </table>
-
-                            </td>
-                        </tr>
-                        </table>
-                    </td>
-
-                    {{-- RIGHT: HERO CARD (navy background + saffron accent) --}}
-                    <td style="width: 44%; vertical-align: top;">
-                        <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
-                        <tr>
-                            <td style="padding: 0 0 0 10px;">
-                                <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
-                                <tr>
-                                    <td class="hero-card" style="padding: 12px 14px;">
-                                        <div class="subtitle-hero" style="margin-bottom: 4px; font-size: 9.5px;">Total Amount Due</div>
-                                        <div class="money-hero" style="font-size: 20px;">
-                                            {!! $moneyHero($totals['total']) !!}
-                                        </div>
-                                        <table class="tbl-inner" cellpadding="0" cellspacing="0" style="margin-top: 8px;">
-                                        <tr>
-                                            <td style="padding: 0; vertical-align: top; width: 34%;">
-                                                <span style="color: #F2A33A; font-size: 9px; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif; letter-spacing: 0.6px; text-transform: uppercase; font-weight: bold;">InvoiceFlow</span>
-                                            </td>
-                                            <td style="padding: 0 0 0 6px; vertical-align: top; width: 66%;">
-                                                <span style="color: rgba(255,255,255,0.55); font-size: 8.5px; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif; letter-spacing: 0.2px; line-height: 1.3;">Paper Ledger Invoice</span>
-                                            </td>
-                                        </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                                </table>
-                            </td>
-                        </tr>
-                        </table>
-                    </td>
-                </tr>
-                </table>
-
-            </td>
-        </tr>
-        </table>
+    <td style="vertical-align: middle; text-align: right;">
+        <div class="invoice-title">INVOICE</div>
     </td>
 </tr>
 </table>
 
-{{$sp(12);}}
+{{$sp(24);}}
 
 {{-- ===========================================================
-     PARTIES: Bill To / From  (ink pill + saffron pill)
+     META: Bill To (LEFT) / Invoice No + Dates (RIGHT)
      =========================================================== --}}
 <table class="tbl" cellpadding="0" cellspacing="0" style="page-break-inside: avoid;">
+<colgroup>
+    <col style="width: 58%;">
+    <col style="width: 42%;">
+</colgroup>
 <tr>
-    <td style="width: 50%; vertical-align: top;">
-        <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
+    {{-- LEFT: Bill To --}}
+    <td style="vertical-align: top;">
+        <div class="section-label" style="margin-bottom: 10px;">Bill To</div>
+        <table class="tbl-full" cellpadding="0" cellspacing="0">
         <tr>
-            <td style="padding: 0 10px 0 2px;">
-                <div style="margin-bottom: 6px;">
-                    <span class="party-label-pill">Bill To</span>
-                </div>
-                <div class="divider-soft" style="margin-bottom: 8px;"></div>
-                <div class="party-name" style="margin-bottom: 5px;" class="text-cell">
+            <td class="cell-wrap">
+                <div class="client-name">
                     {{ $hasClient ? $client_name : '—' }}
                 </div>
-                <table class="tbl-inner" cellpadding="0" cellspacing="0">
                 @if (!empty($client_email))
-                <tr>
-                    <td style="padding: 1px 0;" class="text-cell">
-                        <span class="meta-label">Email:&nbsp;</span>
-                        <span style="font-size: 10px; color: #12202E; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">{{ $client_email }}</span>
-                    </td>
-                </tr>
+                    <div class="client-line">{{ $client_email }}</div>
                 @endif
                 @if (!empty($client_phone))
-                <tr>
-                    <td style="padding: 1px 0;" class="text-cell">
-                        <span class="meta-label">Phone:&nbsp;</span>
-                        <span style="font-size: 10px; color: #12202E; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">{{ $client_phone }}</span>
-                    </td>
-                </tr>
+                    <div class="client-line">{{ $client_phone }}</div>
                 @endif
                 @if (!empty($client_address))
-                <tr>
-                    <td style="padding: 1px 0;" class="text-cell">
-                        <span class="meta-label">Address:&nbsp;</span>
-                        <span style="font-size: 10px; color: #12202E; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">{{ $client_address }}</span>
-                    </td>
-                </tr>
+                    <div class="client-line">{{ $client_address }}</div>
                 @endif
-                </table>
             </td>
         </tr>
         </table>
     </td>
 
-    <td style="width: 50%; vertical-align: top;">
-        <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
+    {{-- RIGHT: Invoice details (label : value, rows aligned) --}}
+    <td style="vertical-align: top;">
+        <table class="tbl-full" cellpadding="0" cellspacing="0">
+        <colgroup>
+            <col style="width: 45%;">
+            <col style="width: 55%;">
+        </colgroup>
         <tr>
-            <td style="padding: 0 2px 0 10px;">
-                <div style="margin-bottom: 6px;">
-                    <span class="party-label-pill saffron">From</span>
-                </div>
-                <div class="divider-soft" style="margin-bottom: 8px;"></div>
-                <div class="party-name" style="margin-bottom: 5px;" class="text-cell">
-                    {{ $business_name }}
-                </div>
-                <table class="tbl-inner" cellpadding="0" cellspacing="0">
-                @if (!empty($business_address))
-                <tr>
-                    <td style="padding: 1px 0;" class="text-cell">
-                        <span class="meta-label">Address:&nbsp;</span>
-                        <span style="font-size: 10px; color: #12202E; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">{{ $business_address }}</span>
-                    </td>
-                </tr>
-                @endif
-                @if (!empty($business_email))
-                <tr>
-                    <td style="padding: 1px 0;" class="text-cell">
-                        <span class="meta-label">Email:&nbsp;</span>
-                        <span style="font-size: 10px; color: #12202E; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">{{ $business_email }}</span>
-                    </td>
-                </tr>
-                @endif
-                @if (filled($business_website ?? null))
-                <tr>
-                    <td style="padding: 1px 0;" class="text-cell">
-                        <span class="meta-label">Web:&nbsp;</span>
-                        <span style="font-size: 10px; color: #12202E; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">{{ $business_website }}</span>
-                    </td>
-                </tr>
-                @endif
-                @if (!empty($business_phone))
-                <tr>
-                    <td style="padding: 1px 0;" class="text-cell">
-                        <span class="meta-label">Phone:&nbsp;</span>
-                        <span style="font-size: 10px; color: #12202E; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">{{ $business_phone }}</span>
-                    </td>
-                </tr>
-                @endif
-                </table>
-            </td>
+            <td class="meta-label" style="padding: 4px 10px 4px 0;">Invoice No:</td>
+            <td class="meta-value"  style="padding: 4px 0 4px 10px;">{{ $invoice_number }}</td>
         </tr>
-        </table>
-    </td>
-</tr>
-</table>
-
-{{$sp(12);}}
-
-{{-- ===========================================================
-     ITEMS TABLE (Paper Ledger style with alternating rows)
-     =========================================================== --}}
-<table class="tbl items" cellpadding="0" cellspacing="0">
-    <colgroup>
-        <col style="width: 5.5%;">
-        <col style="width: 43.5%;">
-        <col style="width: 12%;">
-        <col style="width: 19%;">
-        <col style="width: 20%;">
-    </colgroup>
-    <thead>
-    <tr>
-        <th style="text-align: center; padding: 9px 3px;">#</th>
-        <th style="text-align: left;   padding: 9px 8px;">Item Description</th>
-        <th style="text-align: center; padding: 9px 3px;">Quantity</th>
-        <th style="padding: 9px 8px;" class="money">Unit Price</th>
-        <th style="padding: 9px 8px;" class="money">Total</th>
-    </tr>
-    </thead>
-    <tbody>
-    @forelse ($items as $it)
-        @php
-            $rowClass = ($loop->iteration % 2 === 0) ? 'row-even' : 'row-odd';
-        @endphp
-        <tr class="{{ $rowClass }}" style="page-break-inside: avoid;">
-            <td style="text-align: center; padding: 9px 3px; font-weight: bold; color: #12202E; vertical-align: top;">
-                {{ $loop->iteration }}
-            </td>
-            <td style="text-align: left; padding: 9px 8px; vertical-align: top;" class="text-cell">
-                <div style="font-weight: bold; color: #12202E; font-size: 11px; line-height: 1.3; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">
-                    {{ $it['description'] }}
-                </div>
-                @if (filled($it['details'] ?? null))
-                    <div style="color: #4A5866; font-size: 9.5px; margin-top: 3px; line-height: 1.35; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;" class="text-cell">
-                        {{ $it['details'] }}
-                    </div>
-                @endif
-            </td>
-            <td style="text-align: center; padding: 9px 3px; color: #12202E; vertical-align: top;">
-                {{ $it['quantity'] }}
-            </td>
-            <td style="padding: 9px 8px; color: #12202E; vertical-align: top;" class="money">
-                {!! $money($it['price']) !!}
-            </td>
-            <td style="padding: 9px 8px; font-weight: bold; color: #C97F14; vertical-align: top;" class="money">
-                {!! $money($it['line_total']) !!}
-            </td>
-        </tr>
-    @empty
         <tr>
-            <td colspan="5" style="text-align: center; padding: 18px; color: #4A5866; font-style: italic; border-bottom: 1px solid #EAE3D2; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">
-                No items on this invoice.
-            </td>
+            <td class="meta-label" style="padding: 4px 10px 4px 0;">Issue Date:</td>
+            <td class="meta-value"  style="padding: 4px 0 4px 10px;">{{ $invoice_date }}</td>
         </tr>
-    @endforelse
-    </tbody>
-</table>
-
-{{$sp(12);}}
-
-{{-- ===========================================================
-     LOWER PANEL: Payment Details 50% (ink stripe) / Totals 50% (saffron stripe)
-     =========================================================== --}}
-<table class="tbl" cellpadding="0" cellspacing="0" style="page-break-inside: avoid;">
-<tr>
-    <td style="width: 50%; vertical-align: top;">
-        <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
         <tr>
-            <td style="padding: 0 8px 0 2px;">
-                @if ($hasPayment)
-                    <div style="margin-bottom: 6px;">
-                        <span class="section-pill">Payment Details</span>
-                    </div>
-                    <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
-                    <tr>
-                        <td class="ledger-card ledger-card-payment" style="padding: 10px 12px;">
-                            <table class="tbl-full-inner" cellpadding="0" cellspacing="0" style="font-size: 10px;">
-                                <colgroup>
-                                    <col style="width: 44%;">
-                                    <col style="width: 56%;">
-                                </colgroup>
-                                @if (filled($bank_name ?? null))
-                                <tr>
-                                    <td style="vertical-align: top; padding: 3px 6px 3px 0;"><span class="meta-label">Bank Name</span></td>
-                                    <td style="vertical-align: top; padding: 3px 0 3px 6px;" class="text-cell"><span style="font-weight: bold; color: #12202E; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">{{ $bank_name }}</span></td>
-                                </tr>
-                                @endif
-                                @if (filled($account_title ?? null))
-                                <tr>
-                                    <td style="vertical-align: top; padding: 3px 6px 3px 0;"><span class="meta-label">Account Title</span></td>
-                                    <td style="vertical-align: top; padding: 3px 0 3px 6px;" class="text-cell"><span style="font-weight: bold; color: #12202E; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">{{ $account_title }}</span></td>
-                                </tr>
-                                @endif
-                                @if (filled($account_number ?? null))
-                                <tr>
-                                    <td style="vertical-align: top; padding: 3px 6px 3px 0;"><span class="meta-label">Account Number</span></td>
-                                    <td style="vertical-align: top; padding: 3px 0 3px 6px;" class="text-cell"><span style="font-weight: bold; color: #12202E; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">{{ $account_number }}</span></td>
-                                </tr>
-                                @endif
-                                @if (filled($iban ?? null))
-                                <tr>
-                                    <td style="vertical-align: top; padding: 3px 6px 3px 0;"><span class="meta-label">IBAN</span></td>
-                                    <td style="vertical-align: top; padding: 3px 0 3px 6px;" class="text-cell"><span style="font-weight: bold; color: #12202E; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">{{ $iban }}</span></td>
-                                </tr>
-                                @endif
-                                @if (filled($payment_method ?? null))
-                                <tr>
-                                    <td style="vertical-align: top; padding: 3px 6px 3px 0;"><span class="meta-label">Payment Method</span></td>
-                                    <td style="vertical-align: top; padding: 3px 0 3px 6px;" class="text-cell"><span style="font-weight: bold; color: #12202E; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">{{ $payment_method }}</span></td>
-                                </tr>
-                                @endif
-                            </table>
-                        </td>
-                    </tr>
-                    </table>
+            <td class="meta-label" style="padding: 4px 10px 4px 0;">Due Date:</td>
+            <td class="meta-value"  style="padding: 4px 0 4px 10px;">
+                @if (!empty($due_date))
+                    {{ $due_date }}
                 @else
-                    {{-- Empty: nothing rendered (so the right totals panel doesn't shift) --}}
+                    <span class="brand-muted">—</span>
                 @endif
-            </td>
-        </tr>
-        </table>
-    </td>
-
-    <td style="width: 50%; vertical-align: top;">
-        <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
-        <tr>
-            <td style="padding: 0 2px 0 8px;">
-                <div style="margin-bottom: 6px;">
-                    <span class="section-pill">Summary</span>
-                </div>
-                <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
-                <tr>
-                    <td class="ledger-card ledger-card-totals" style="padding: 10px 12px;">
-                        <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
-                            <colgroup>
-                                <col style="width: 54%;">
-                                <col style="width: 46%;">
-                            </colgroup>
-                            <tr>
-                                <td style="vertical-align: top; padding: 4px 6px 4px 0;">
-                                    <span class="totals-label">Subtotal</span>
-                                </td>
-                                <td style="vertical-align: top; padding: 4px 0 4px 6px;">
-                                    <div class="totals-value money">{!! $money($totals['subtotal']) !!}</div>
-                                </td>
-                            </tr>
-                            @if ($taxPct > 0 || (float) $totals['tax'] > 0)
-                            <tr>
-                                <td style="vertical-align: top; padding: 4px 6px 4px 0;">
-                                    <span class="totals-label">{{ $taxLabel }}</span>
-                                </td>
-                                <td style="vertical-align: top; padding: 4px 0 4px 6px;">
-                                    <div class="totals-value money">{!! $money($totals['tax']) !!}</div>
-                                </td>
-                            </tr>
-                            @endif
-                            @if ((float) $totals['discount'] > 0)
-                            <tr>
-                                <td style="vertical-align: top; padding: 4px 6px 4px 0;">
-                                    <span class="totals-label">Discount</span>
-                                </td>
-                                <td style="vertical-align: top; padding: 4px 0 4px 6px;">
-                                    <div class="totals-value money">- {!! $money($totals['discount']) !!}</div>
-                                </td>
-                            </tr>
-                            @endif
-                        </table>
-
-                        <table class="tbl-full-inner" cellpadding="0" cellspacing="0" style="margin-top: 8px;">
-                        <tr>
-                            <td style="padding: 0;">
-                                <div class="divider-saffron"></div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="hero-card" style="padding: 9px 12px; margin-top: 8px;">
-                                <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
-                                <colgroup>
-                                    <col style="width: 46%;">
-                                    <col style="width: 54%;">
-                                </colgroup>
-                                <tr>
-                                    <td style="vertical-align: middle; padding: 0 5px 0 0;">
-                                        <span class="totals-final-label">Total</span>
-                                    </td>
-                                    <td style="vertical-align: middle; padding: 0 0 0 5px;">
-                                        <div class="totals-final-value money" style="font-size: 15px;">
-                                            {!! $money($totals['total']) !!}
-                                        </div>
-                                    </td>
-                                </tr>
-                                </table>
-                            </td>
-                        </tr>
-                        </table>
-                    </td>
-                </tr>
-                </table>
             </td>
         </tr>
         </table>
@@ -956,118 +461,203 @@
 </tr>
 </table>
 
-{{$sp(14);}}
+{{$sp(22);}}
 
 {{-- ===========================================================
-     NOTES (60%) + SIGNATURE (40%)
+     ITEMS TABLE
      =========================================================== --}}
-@if ($noteLines->isNotEmpty() || $hasSignature)
+<table class="items" cellpadding="0" cellspacing="0">
+<colgroup>
+    <col style="width: 7%;">
+    <col style="width: 45%;">
+    <col style="width: 13%;">
+    <col style="width: 17.5%;">
+    <col style="width: 17.5%;">
+</colgroup>
+<thead>
+<tr>
+    <th class="center">#</th>
+    <th>Description</th>
+    <th class="center">Quantity</th>
+    <th class="money">Rate</th>
+    <th class="money">Amount</th>
+</tr>
+</thead>
+<tbody>
+@forelse ($items as $it)
+    <tr style="page-break-inside: avoid;">
+        <td class="center" style="font-weight: bold;">
+            {{ $loop->iteration }}
+        </td>
+        <td class="cell-wrap">
+            <div class="item-name">{{ $it['description'] }}</div>
+            @if (filled($it['details'] ?? null))
+                <div class="item-details">{{ $it['details'] }}</div>
+            @endif
+        </td>
+        <td class="center">
+            {{ $it['quantity'] }}
+        </td>
+        <td class="money">
+            {!! $money($it['price']) !!}
+        </td>
+        <td class="money">
+            {!! $money($it['line_total']) !!}
+        </td>
+    </tr>
+@empty
+    <tr>
+        <td colspan="5" style="text-align: center; padding: 22px 10px; color: #64748B; font-style: italic; font-size: 11px;">
+            No items on this invoice.
+        </td>
+    </tr>
+@endforelse
+</tbody>
+</table>
+
+{{$sp(18);}}
+
+{{-- ===========================================================
+     TOTALS: Right-aligned mini panel
+     =========================================================== --}}
+<table class="tbl-inner" cellpadding="0" cellspacing="0" align="right">
+<tr>
+<td>
+<table class="totals-tbl" cellpadding="0" cellspacing="0" style="width: 340px;">
+<colgroup>
+    <col style="width: 55%;">
+    <col style="width: 45%;">
+</colgroup>
+    <tr>
+        <td class="lbl">Subtotal</td>
+        <td class="val">{!! $money($totals['subtotal']) !!}</td>
+    </tr>
+    @if ($taxPct > 0 || (float) $totals['tax'] > 0)
+    <tr>
+        <td class="lbl">{{ $taxLabel }}</td>
+        <td class="val">{!! $money($totals['tax']) !!}</td>
+    </tr>
+    @endif
+    @if ((float) $totals['discount'] > 0)
+    <tr class="above-total">
+        <td class="lbl">
+            @php
+                $subtotalCents = round((float) $totals['subtotal'] * 100);
+                $discCents = round((float) $totals['discount'] * 100);
+                $discPct = 0;
+                if ($subtotalCents > 0) {
+                    $discPct = round(($discCents / $subtotalCents) * 100, 2);
+                    $discPctText = rtrim(rtrim(number_format($discPct, 2), '0'), '.');
+                }
+            @endphp
+            @if (!empty($discPctText) && $discPct > 0)
+                Discount ({{ $discPctText }}%)
+            @else
+                Discount
+            @endif
+        </td>
+        <td class="val">- {!! $money($totals['discount']) !!}</td>
+    </tr>
+    @else
+        {{-- If no discount row, mark whatever last row above-total so spacing is consistent --}}
+        @if (!($taxPct > 0 || (float) $totals['tax'] > 0))
+        <tr class="above-total"><td colspan="2" style="padding: 0; height: 0;"></td></tr>
+        @endif
+    @endif
+    <tr class="total">
+        <td class="lbl">Total</td>
+        <td class="val">{!! $money($totals['total']) !!}</td>
+    </tr>
+</table>
+</td>
+</tr>
+</table>
+
+{{$sp(28);}}
+
+{{-- ===========================================================
+     NOTES (full width, left)
+     =========================================================== --}}
+@if ($noteLines->isNotEmpty())
 <table class="tbl" cellpadding="0" cellspacing="0" style="page-break-inside: avoid;">
 <tr>
-    <td style="width: 60%; vertical-align: top;">
-        <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
-        <tr>
-            <td style="padding: 0 10px 0 2px;">
-                @if ($noteLines->isNotEmpty())
-                    <div style="margin-bottom: 6px;">
-                        <span class="section-pill">Notes</span>
-                    </div>
-                    <ul class="notes-list">
-                        @foreach ($noteLines as $line)
-                            <li class="text-cell">{{ $line }}</li>
-                        @endforeach
-                    </ul>
-                @endif
-            </td>
-        </tr>
-        </table>
-    </td>
-
-    <td style="width: 40%; vertical-align: top;">
-        <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
-        <tr>
-            <td style="padding: 0 2px 0 10px;">
-                @if ($hasSignature)
-                    <div style="margin-bottom: 6px;">
-                        <span class="section-pill">Authorised Signatory</span>
-                    </div>
-                    <table class="tbl-inner" cellpadding="0" cellspacing="0" align="right">
-                    <tr>
-                        <td style="text-align: right;">
-                            <div class="signature-line"></div>
-                            <div class="signature-name" style="margin-top: 6px;">
-                                {{ $signature_name }}
-                            </div>
-                            @if (filled($signature_title ?? null))
-                                <div class="signature-title" style="margin-top: 1px;">
-                                    {{ $signature_title }}
-                                </div>
-                            @endif
-                        </td>
-                    </tr>
-                    </table>
-                @endif
-            </td>
-        </tr>
-        </table>
+    <td class="cell-wrap">
+        <div class="notes-title" style="margin-bottom: 8px;">Notes</div>
+        @foreach ($noteLines as $line)
+            <div class="notes-body" style="{{ !$loop->first ? 'margin-top: 1px;' : '' }}">
+                {{ $line }}
+            </div>
+        @endforeach
     </td>
 </tr>
 </table>
 @endif
 
-{{$sp(16);}}
+{{$sp(28);}}
+
+{{-- Soft blue divider before footer --}}
+<table class="tbl-full" cellpadding="0" cellspacing="0">
+<tr><td><div class="soft-divider"></div></td></tr>
+</table>
+
+{{$sp(14);}}
 
 {{-- ===========================================================
-     FOOTER: Ink + Saffron double rule + branding
+     FOOTER: Contact rows (icons + text) LEFT / Signature RIGHT
      =========================================================== --}}
 <table class="tbl" cellpadding="0" cellspacing="0" style="page-break-inside: avoid;">
+<colgroup>
+    <col style="width: 58%;">
+    <col style="width: 42%;">
+</colgroup>
 <tr>
-    <td style="width: 100%;">
-        <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
-        <tr>
-            <td style="padding: 0 2px;">
-                <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
-                <tr>
-                    <td style="padding: 0;">
-                        <div class="footer-saffron-rule"></div>
-                    </td>
-                </tr>
-                <tr>
-                    <td style="padding: 5px 0 0 0;">
-                        <div class="footer-rule"></div>
-                    </td>
-                </tr>
-                </table>
-            </td>
+    {{-- LEFT: Contact rows (email, web, phone with icons) --}}
+    <td style="vertical-align: bottom;">
+        <table class="tbl-inner" cellpadding="0" cellspacing="0">
+        @if (!empty($business_email))
+        <tr class="contact-row">
+            <td class="contact-icon">&#9993;</td>
+            <td class="contact-text">{{ $business_email }}</td>
         </tr>
-        <tr>
-            <td style="padding: 8px 2px 0 2px;">
-                <table class="tbl" cellpadding="0" cellspacing="0">
-                <tr>
-                    <td style="width: 60%; vertical-align: middle;">
-                        <div style="padding: 0 8px 0 0;">
-                            <div class="footer-text">
-                                Thank you for choosing
-                                <span style="color: #C97F14; font-weight: bold;">{{ filled($business_name ?? null) && $business_name !== 'Your business' ? $business_name : 'InvoiceFlow' }}</span>!
-                            </div>
-                            <div class="footer-text" style="margin-top: 2px;">
-                                Generated on {{ date('M j, Y') }} &middot; Paper Ledger &middot; InvoiceFlow
-                            </div>
-                        </div>
-                    </td>
-                    <td style="width: 40%; vertical-align: middle;">
-                        <div style="padding: 0 0 0 8px; text-align: right;">
-                            <span class="footer-brand">InvoiceFlow</span>
-                            <div style="color: #4A5866; font-size: 8.5px; margin-top: 2px; letter-spacing: 0.2px; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif; text-align: right;">
-                                Paper Ledger Theme
-                            </div>
-                        </div>
-                    </td>
-                </tr>
-                </table>
-            </td>
+        @endif
+        @if (filled($business_website ?? null))
+        <tr class="contact-row">
+            <td class="contact-icon">&#127760;</td>
+            <td class="contact-text">{{ $business_website }}</td>
         </tr>
+        @endif
+        @if (!empty($business_phone))
+        <tr class="contact-row">
+            <td class="contact-icon">&#128222;</td>
+            <td class="contact-text">{{ $business_phone }}</td>
+        </tr>
+        @endif
+        @if (!empty($business_address))
+        <tr class="contact-row">
+            <td class="contact-icon">&#127968;</td>
+            <td class="contact-text">{{ $business_address }}</td>
+        </tr>
+        @endif
         </table>
+    </td>
+
+    {{-- RIGHT: Signature block --}}
+    <td style="vertical-align: bottom;">
+        @if ($hasSignature)
+            <table class="tbl-inner" cellpadding="0" cellspacing="0" align="right">
+            <tr>
+                <td style="text-align: right;">
+                    <div class="signature-name">
+                        {{ $signature_name }}
+                    </div>
+                    <div class="signature-line"></div>
+                    <div class="signature-title">
+                        {{ filled($signature_title ?? null) ? $signature_title : 'Authorized Signature' }}
+                    </div>
+                </td>
+            </tr>
+            </table>
+        @endif
     </td>
 </tr>
 </table>
