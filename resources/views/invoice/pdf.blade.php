@@ -419,11 +419,11 @@
      =========================================================== --}}
 <table class="tbl" cellpadding="0" cellspacing="0">
 <colgroup>
-    <col style="width: 6px;">
-    <col style="width: 100%;">
+    <col style="width: 1.2%;">
+    <col style="width: 98.8%;">
 </colgroup>
 <tr>
-    <td style="width: 6px; vertical-align: top;">
+    <td style="vertical-align: top;">
         <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
         <tr>
             <td>
@@ -435,31 +435,31 @@
     <td style="vertical-align: top;">
         <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
         <tr>
-            <td style="padding: 0 0 0 10px;">
+            <td style="padding: 0 0 0 8px;">
 
                 {{-- ---------- Row 1: Header ---------- --}}
                 <table class="tbl" cellpadding="0" cellspacing="0">
                 <tr>
-                    <td style="width: 52%; vertical-align: top;">
+                    <td style="width: 54%; vertical-align: top;">
                         <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
                         <tr>
-                            <td style="padding: 0 14px 0 0;" class="text-cell">
+                            <td style="padding: 0 10px 0 0;" class="text-cell">
                                 @if ($logoOk)
-                                    <img src="{{ $logo_data }}" style="max-height: 46px; max-width: 180px; display: block;" alt="Logo">
+                                    <img src="{{ $logo_data }}" style="max-height: 44px; max-width: 170px; display: block;" alt="Logo">
                                 @else
                                     <table class="tbl-inner" cellpadding="0" cellspacing="0">
                                     <tr>
-                                        <td style="vertical-align: middle; padding: 0 10px 0 0;">
+                                        <td style="vertical-align: middle; padding: 0 8px 0 0;">
                                             <div class="brand-chip">
                                                 {{ mb_strtoupper(mb_substr($business_name ?? 'I', 0, 1)) }}
                                             </div>
                                         </td>
                                         <td style="vertical-align: middle; padding: 0;">
-                                            <div class="display-title" style="font-size: 20px;">
+                                            <div class="display-title" style="font-size: 19px;">
                                                 {{ $business_name }}
                                             </div>
                                             @if (filled($business_tagline ?? null))
-                                                <div style="font-size: 9.5px; color: #4A5866; margin-top: 2px; letter-spacing: 0.2px; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">
+                                                <div style="font-size: 9px; color: #4A5866; margin-top: 2px; letter-spacing: 0.2px; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">
                                                     {{ $business_tagline }}
                                                 </div>
                                             @endif
@@ -473,30 +473,30 @@
                     </td>
 
                     {{-- Right side: contact details (faded, right-aligned, small) --}}
-                    <td style="width: 48%; vertical-align: top;">
+                    <td style="width: 46%; vertical-align: top;">
                         <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
                         <tr>
-                            <td style="padding: 0 0 0 14px; text-align: right;" class="text-cell">
+                            <td style="padding: 0 0 0 8px; text-align: right;" class="text-cell">
                                 <table class="tbl-inner" cellpadding="0" cellspacing="0" align="right">
                                 <tr>
                                     <td style="text-align: right;">
                                         @if (!empty($business_address))
-                                            <div style="font-size: 9.5px; color: #4A5866; margin-bottom: 2px; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">
+                                            <div style="font-size: 9px; color: #4A5866; margin-bottom: 2px; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif; line-height: 1.3;">
                                                 <span class="meta-label">Address:&nbsp;</span>{{ $business_address }}
                                             </div>
                                         @endif
                                         @if (!empty($business_email))
-                                            <div style="font-size: 9.5px; color: #4A5866; margin-bottom: 2px; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">
+                                            <div style="font-size: 9px; color: #4A5866; margin-bottom: 2px; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif; line-height: 1.3;">
                                                 <span class="meta-label">Email:&nbsp;</span>{{ $business_email }}
                                             </div>
                                         @endif
                                         @if (filled($business_website ?? null))
-                                            <div style="font-size: 9.5px; color: #4A5866; margin-bottom: 2px; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">
+                                            <div style="font-size: 9px; color: #4A5866; margin-bottom: 2px; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif; line-height: 1.3;">
                                                 <span class="meta-label">Web:&nbsp;</span>{{ $business_website }}
                                             </div>
                                         @endif
                                         @if (!empty($business_phone))
-                                            <div style="font-size: 9.5px; color: #4A5866; margin-bottom: 2px; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">
+                                            <div style="font-size: 9px; color: #4A5866; margin-bottom: 0; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif; line-height: 1.3;">
                                                 <span class="meta-label">Phone:&nbsp;</span>{{ $business_phone }}
                                             </div>
                                         @endif
@@ -517,10 +517,10 @@
                 {{-- ---------- Row 2: INVOICE title left + Navy hero card total right ---------- --}}
                 <table class="tbl" cellpadding="0" cellspacing="0">
                 <tr>
-                    <td style="width: 55%; vertical-align: middle;">
+                    <td style="width: 56%; vertical-align: middle;">
                         <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
                         <tr>
-                            <td style="padding: 0 14px 0 0;">
+                            <td style="padding: 0 10px 0 0;">
                                 <table class="tbl-inner" cellpadding="0" cellspacing="0">
                                 <tr>
                                     <td style="padding: 0 0 6px 0;">
@@ -529,7 +529,7 @@
                                 </tr>
                                 <tr>
                                     <td>
-                                        <div class="display-title" style="font-size: 30px; color: #12202E;">
+                                        <div class="display-title" style="font-size: 28px; color: #12202E;">
                                             INVOICE
                                         </div>
                                     </td>
@@ -545,16 +545,16 @@
                                 </colgroup>
                                 <tr>
                                     <td style="vertical-align: top;">
-                                        <div style="padding: 0 10px 0 0;">
+                                        <div style="padding: 0 8px 0 0;">
                                             <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
                                             <tr>
                                                 <td style="padding: 4px 0;">
-                                                    <span class="meta-row-label" style="padding: 2px 8px;">Invoice No</span>
+                                                    <span class="meta-row-label" style="padding: 2px 7px;">Invoice No</span>
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td style="padding: 2px 8px 4px 8px;">
-                                                    <span class="meta-value" style="font-size: 11.5px;">{{ $invoice_number }}</span>
+                                                <td style="padding: 2px 7px 4px 7px;">
+                                                    <span class="meta-value" style="font-size: 11px;">{{ $invoice_number }}</span>
                                                 </td>
                                             </tr>
                                             </table>
@@ -571,18 +571,18 @@
                                                 </colgroup>
                                                 <tr>
                                                     <td style="vertical-align: top;">
-                                                        <div style="padding: 0 6px 0 0;">
+                                                        <div style="padding: 0 5px 0 0;">
                                                             <span class="meta-label">Issue Date</span><br>
-                                                            <span class="meta-value" style="font-size: 11px;">{{ $invoice_date }}</span>
+                                                            <span class="meta-value" style="font-size: 10.5px;">{{ $invoice_date }}</span>
                                                         </div>
                                                     </td>
                                                     <td style="vertical-align: top;">
-                                                        <div style="padding: 0 0 0 6px;">
+                                                        <div style="padding: 0 0 0 5px;">
                                                             <span class="meta-label">Due Date</span><br>
                                                             @if (!empty($due_date))
-                                                                <span class="meta-value" style="font-size: 11px;">{{ $due_date }}</span>
+                                                                <span class="meta-value" style="font-size: 10.5px;">{{ $due_date }}</span>
                                                             @else
-                                                                <span style="font-size: 11px; color: #4A5866; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">—</span>
+                                                                <span style="font-size: 10.5px; color: #4A5866; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">—</span>
                                                             @endif
                                                         </div>
                                                     </td>
@@ -609,24 +609,24 @@
                     </td>
 
                     {{-- RIGHT: HERO CARD (navy background + saffron accent) --}}
-                    <td style="width: 45%; vertical-align: top;">
+                    <td style="width: 44%; vertical-align: top;">
                         <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
                         <tr>
-                            <td style="padding: 0 0 0 14px;">
+                            <td style="padding: 0 0 0 10px;">
                                 <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
                                 <tr>
-                                    <td class="hero-card" style="padding: 14px 16px;">
-                                        <div class="subtitle-hero" style="margin-bottom: 4px;">Total Amount Due</div>
-                                        <div class="money-hero">
+                                    <td class="hero-card" style="padding: 12px 14px;">
+                                        <div class="subtitle-hero" style="margin-bottom: 4px; font-size: 9.5px;">Total Amount Due</div>
+                                        <div class="money-hero" style="font-size: 20px;">
                                             {!! $moneyHero($totals['total']) !!}
                                         </div>
-                                        <table class="tbl-inner" cellpadding="0" cellspacing="0" style="margin-top: 10px;">
+                                        <table class="tbl-inner" cellpadding="0" cellspacing="0" style="margin-top: 8px;">
                                         <tr>
-                                            <td style="padding: 0; vertical-align: top;">
-                                                <span style="color: #F2A33A; font-size: 9.5px; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif; letter-spacing: 0.8px; text-transform: uppercase; font-weight: bold;">InvoiceFlow</span>
+                                            <td style="padding: 0; vertical-align: top; width: 34%;">
+                                                <span style="color: #F2A33A; font-size: 9px; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif; letter-spacing: 0.6px; text-transform: uppercase; font-weight: bold;">InvoiceFlow</span>
                                             </td>
-                                            <td style="padding: 0 0 0 12px; vertical-align: top;">
-                                                <span style="color: rgba(255,255,255,0.55); font-size: 9px; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif; letter-spacing: 0.3px;">Paper Ledger Invoice</span>
+                                            <td style="padding: 0 0 0 6px; vertical-align: top; width: 66%;">
+                                                <span style="color: rgba(255,255,255,0.55); font-size: 8.5px; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif; letter-spacing: 0.2px; line-height: 1.3;">Paper Ledger Invoice</span>
                                             </td>
                                         </tr>
                                         </table>
@@ -657,7 +657,7 @@
     <td style="width: 50%; vertical-align: top;">
         <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
         <tr>
-            <td style="padding: 0 12px 0 0;">
+            <td style="padding: 0 10px 0 2px;">
                 <div style="margin-bottom: 6px;">
                     <span class="party-label-pill">Bill To</span>
                 </div>
@@ -699,7 +699,7 @@
     <td style="width: 50%; vertical-align: top;">
         <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
         <tr>
-            <td style="padding: 0 0 0 12px;">
+            <td style="padding: 0 2px 0 10px;">
                 <div style="margin-bottom: 6px;">
                     <span class="party-label-pill saffron">From</span>
                 </div>
@@ -755,19 +755,19 @@
      =========================================================== --}}
 <table class="tbl items" cellpadding="0" cellspacing="0">
     <colgroup>
-        <col style="width: 6%;">
-        <col style="width: 44%;">
+        <col style="width: 5.5%;">
+        <col style="width: 43.5%;">
         <col style="width: 12%;">
         <col style="width: 19%;">
-        <col style="width: 19%;">
+        <col style="width: 20%;">
     </colgroup>
     <thead>
     <tr>
-        <th style="text-align: center; padding: 10px 4px;">#</th>
-        <th style="text-align: left;   padding: 10px 10px;">Item Description</th>
-        <th style="text-align: center; padding: 10px 4px;">Quantity</th>
-        <th style="padding: 10px 10px;" class="money">Unit Price</th>
-        <th style="padding: 10px 10px;" class="money">Total</th>
+        <th style="text-align: center; padding: 9px 3px;">#</th>
+        <th style="text-align: left;   padding: 9px 8px;">Item Description</th>
+        <th style="text-align: center; padding: 9px 3px;">Quantity</th>
+        <th style="padding: 9px 8px;" class="money">Unit Price</th>
+        <th style="padding: 9px 8px;" class="money">Total</th>
     </tr>
     </thead>
     <tbody>
@@ -776,10 +776,10 @@
             $rowClass = ($loop->iteration % 2 === 0) ? 'row-even' : 'row-odd';
         @endphp
         <tr class="{{ $rowClass }}" style="page-break-inside: avoid;">
-            <td style="text-align: center; padding: 10px 4px; font-weight: bold; color: #12202E; vertical-align: top;">
+            <td style="text-align: center; padding: 9px 3px; font-weight: bold; color: #12202E; vertical-align: top;">
                 {{ $loop->iteration }}
             </td>
-            <td style="text-align: left; padding: 10px 10px; vertical-align: top;" class="text-cell">
+            <td style="text-align: left; padding: 9px 8px; vertical-align: top;" class="text-cell">
                 <div style="font-weight: bold; color: #12202E; font-size: 11px; line-height: 1.3; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">
                     {{ $it['description'] }}
                 </div>
@@ -789,13 +789,13 @@
                     </div>
                 @endif
             </td>
-            <td style="text-align: center; padding: 10px 4px; color: #12202E; vertical-align: top;">
+            <td style="text-align: center; padding: 9px 3px; color: #12202E; vertical-align: top;">
                 {{ $it['quantity'] }}
             </td>
-            <td style="padding: 10px 10px; color: #12202E; vertical-align: top;" class="money">
+            <td style="padding: 9px 8px; color: #12202E; vertical-align: top;" class="money">
                 {!! $money($it['price']) !!}
             </td>
-            <td style="padding: 10px 10px; font-weight: bold; color: #C97F14; vertical-align: top;" class="money">
+            <td style="padding: 9px 8px; font-weight: bold; color: #C97F14; vertical-align: top;" class="money">
                 {!! $money($it['line_total']) !!}
             </td>
         </tr>
@@ -819,14 +819,14 @@
     <td style="width: 50%; vertical-align: top;">
         <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
         <tr>
-            <td style="padding: 0 12px 0 0;">
+            <td style="padding: 0 8px 0 2px;">
                 @if ($hasPayment)
                     <div style="margin-bottom: 6px;">
                         <span class="section-pill">Payment Details</span>
                     </div>
                     <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
                     <tr>
-                        <td class="ledger-card ledger-card-payment" style="padding: 12px 14px;">
+                        <td class="ledger-card ledger-card-payment" style="padding: 10px 12px;">
                             <table class="tbl-full-inner" cellpadding="0" cellspacing="0" style="font-size: 10px;">
                                 <colgroup>
                                     <col style="width: 44%;">
@@ -834,32 +834,32 @@
                                 </colgroup>
                                 @if (filled($bank_name ?? null))
                                 <tr>
-                                    <td style="vertical-align: top; padding: 3px 8px 3px 0;"><span class="meta-label">Bank Name</span></td>
-                                    <td style="vertical-align: top; padding: 3px 0 3px 8px;" class="text-cell"><span style="font-weight: bold; color: #12202E; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">{{ $bank_name }}</span></td>
+                                    <td style="vertical-align: top; padding: 3px 6px 3px 0;"><span class="meta-label">Bank Name</span></td>
+                                    <td style="vertical-align: top; padding: 3px 0 3px 6px;" class="text-cell"><span style="font-weight: bold; color: #12202E; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">{{ $bank_name }}</span></td>
                                 </tr>
                                 @endif
                                 @if (filled($account_title ?? null))
                                 <tr>
-                                    <td style="vertical-align: top; padding: 3px 8px 3px 0;"><span class="meta-label">Account Title</span></td>
-                                    <td style="vertical-align: top; padding: 3px 0 3px 8px;" class="text-cell"><span style="font-weight: bold; color: #12202E; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">{{ $account_title }}</span></td>
+                                    <td style="vertical-align: top; padding: 3px 6px 3px 0;"><span class="meta-label">Account Title</span></td>
+                                    <td style="vertical-align: top; padding: 3px 0 3px 6px;" class="text-cell"><span style="font-weight: bold; color: #12202E; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">{{ $account_title }}</span></td>
                                 </tr>
                                 @endif
                                 @if (filled($account_number ?? null))
                                 <tr>
-                                    <td style="vertical-align: top; padding: 3px 8px 3px 0;"><span class="meta-label">Account Number</span></td>
-                                    <td style="vertical-align: top; padding: 3px 0 3px 8px;" class="text-cell"><span style="font-weight: bold; color: #12202E; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">{{ $account_number }}</span></td>
+                                    <td style="vertical-align: top; padding: 3px 6px 3px 0;"><span class="meta-label">Account Number</span></td>
+                                    <td style="vertical-align: top; padding: 3px 0 3px 6px;" class="text-cell"><span style="font-weight: bold; color: #12202E; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">{{ $account_number }}</span></td>
                                 </tr>
                                 @endif
                                 @if (filled($iban ?? null))
                                 <tr>
-                                    <td style="vertical-align: top; padding: 3px 8px 3px 0;"><span class="meta-label">IBAN</span></td>
-                                    <td style="vertical-align: top; padding: 3px 0 3px 8px;" class="text-cell"><span style="font-weight: bold; color: #12202E; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">{{ $iban }}</span></td>
+                                    <td style="vertical-align: top; padding: 3px 6px 3px 0;"><span class="meta-label">IBAN</span></td>
+                                    <td style="vertical-align: top; padding: 3px 0 3px 6px;" class="text-cell"><span style="font-weight: bold; color: #12202E; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">{{ $iban }}</span></td>
                                 </tr>
                                 @endif
                                 @if (filled($payment_method ?? null))
                                 <tr>
-                                    <td style="vertical-align: top; padding: 3px 8px 3px 0;"><span class="meta-label">Payment Method</span></td>
-                                    <td style="vertical-align: top; padding: 3px 0 3px 8px;" class="text-cell"><span style="font-weight: bold; color: #12202E; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">{{ $payment_method }}</span></td>
+                                    <td style="vertical-align: top; padding: 3px 6px 3px 0;"><span class="meta-label">Payment Method</span></td>
+                                    <td style="vertical-align: top; padding: 3px 0 3px 6px;" class="text-cell"><span style="font-weight: bold; color: #12202E; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;">{{ $payment_method }}</span></td>
                                 </tr>
                                 @endif
                             </table>
@@ -877,67 +877,67 @@
     <td style="width: 50%; vertical-align: top;">
         <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
         <tr>
-            <td style="padding: 0 0 0 12px;">
+            <td style="padding: 0 2px 0 8px;">
                 <div style="margin-bottom: 6px;">
                     <span class="section-pill">Summary</span>
                 </div>
                 <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
                 <tr>
-                    <td class="ledger-card ledger-card-totals" style="padding: 12px 14px;">
+                    <td class="ledger-card ledger-card-totals" style="padding: 10px 12px;">
                         <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
                             <colgroup>
                                 <col style="width: 54%;">
                                 <col style="width: 46%;">
                             </colgroup>
                             <tr>
-                                <td style="vertical-align: top; padding: 4px 8px 4px 0;">
+                                <td style="vertical-align: top; padding: 4px 6px 4px 0;">
                                     <span class="totals-label">Subtotal</span>
                                 </td>
-                                <td style="vertical-align: top; padding: 4px 0 4px 8px;">
+                                <td style="vertical-align: top; padding: 4px 0 4px 6px;">
                                     <div class="totals-value money">{!! $money($totals['subtotal']) !!}</div>
                                 </td>
                             </tr>
                             @if ($taxPct > 0 || (float) $totals['tax'] > 0)
                             <tr>
-                                <td style="vertical-align: top; padding: 4px 8px 4px 0;">
+                                <td style="vertical-align: top; padding: 4px 6px 4px 0;">
                                     <span class="totals-label">{{ $taxLabel }}</span>
                                 </td>
-                                <td style="vertical-align: top; padding: 4px 0 4px 8px;">
+                                <td style="vertical-align: top; padding: 4px 0 4px 6px;">
                                     <div class="totals-value money">{!! $money($totals['tax']) !!}</div>
                                 </td>
                             </tr>
                             @endif
                             @if ((float) $totals['discount'] > 0)
                             <tr>
-                                <td style="vertical-align: top; padding: 4px 8px 4px 0;">
+                                <td style="vertical-align: top; padding: 4px 6px 4px 0;">
                                     <span class="totals-label">Discount</span>
                                 </td>
-                                <td style="vertical-align: top; padding: 4px 0 4px 8px;">
+                                <td style="vertical-align: top; padding: 4px 0 4px 6px;">
                                     <div class="totals-value money">- {!! $money($totals['discount']) !!}</div>
                                 </td>
                             </tr>
                             @endif
                         </table>
 
-                        <table class="tbl-full-inner" cellpadding="0" cellspacing="0" style="margin-top: 10px;">
+                        <table class="tbl-full-inner" cellpadding="0" cellspacing="0" style="margin-top: 8px;">
                         <tr>
                             <td style="padding: 0;">
                                 <div class="divider-saffron"></div>
                             </td>
                         </tr>
                         <tr>
-                            <td class="hero-card" style="padding: 10px 14px; margin-top: 10px;">
+                            <td class="hero-card" style="padding: 9px 12px; margin-top: 8px;">
                                 <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
                                 <colgroup>
                                     <col style="width: 46%;">
                                     <col style="width: 54%;">
                                 </colgroup>
                                 <tr>
-                                    <td style="vertical-align: middle; padding: 0 6px 0 0;">
+                                    <td style="vertical-align: middle; padding: 0 5px 0 0;">
                                         <span class="totals-final-label">Total</span>
                                     </td>
-                                    <td style="vertical-align: middle; padding: 0 0 0 6px;">
-                                        <div class="totals-final-value money">
+                                    <td style="vertical-align: middle; padding: 0 0 0 5px;">
+                                        <div class="totals-final-value money" style="font-size: 15px;">
                                             {!! $money($totals['total']) !!}
                                         </div>
                                     </td>
@@ -967,7 +967,7 @@
     <td style="width: 60%; vertical-align: top;">
         <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
         <tr>
-            <td style="padding: 0 12px 0 0;">
+            <td style="padding: 0 10px 0 2px;">
                 @if ($noteLines->isNotEmpty())
                     <div style="margin-bottom: 6px;">
                         <span class="section-pill">Notes</span>
@@ -986,7 +986,7 @@
     <td style="width: 40%; vertical-align: top;">
         <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
         <tr>
-            <td style="padding: 0 0 0 12px;">
+            <td style="padding: 0 2px 0 10px;">
                 @if ($hasSignature)
                     <div style="margin-bottom: 6px;">
                         <span class="section-pill">Authorised Signatory</span>
@@ -1025,7 +1025,7 @@
     <td style="width: 100%;">
         <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
         <tr>
-            <td style="padding: 0;">
+            <td style="padding: 0 2px;">
                 <table class="tbl-full-inner" cellpadding="0" cellspacing="0">
                 <tr>
                     <td style="padding: 0;">
@@ -1041,11 +1041,11 @@
             </td>
         </tr>
         <tr>
-            <td style="padding: 8px 0 0 0;">
+            <td style="padding: 8px 2px 0 2px;">
                 <table class="tbl" cellpadding="0" cellspacing="0">
                 <tr>
                     <td style="width: 60%; vertical-align: middle;">
-                        <div style="padding: 0 10px 0 0;">
+                        <div style="padding: 0 8px 0 0;">
                             <div class="footer-text">
                                 Thank you for choosing
                                 <span style="color: #C97F14; font-weight: bold;">{{ filled($business_name ?? null) && $business_name !== 'Your business' ? $business_name : 'InvoiceFlow' }}</span>!
@@ -1056,7 +1056,7 @@
                         </div>
                     </td>
                     <td style="width: 40%; vertical-align: middle;">
-                        <div style="padding: 0 0 0 10px; text-align: right;">
+                        <div style="padding: 0 0 0 8px; text-align: right;">
                             <span class="footer-brand">InvoiceFlow</span>
                             <div style="color: #4A5866; font-size: 8.5px; margin-top: 2px; letter-spacing: 0.2px; font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif; text-align: right;">
                                 Paper Ledger Theme
