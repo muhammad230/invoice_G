@@ -24,7 +24,7 @@
 <title>Invoice {{ $invoice_number }}</title>
 <style>
     @page {
-        size: A4 portrait;
+        size: A4 portrait; 
         margin: 28px 36px;
     }
 
@@ -38,6 +38,7 @@
         color: #12202E;
         font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
         font-size: 11px;
+        padding: 10px;
         line-height: 1.45;
     }
 
@@ -52,12 +53,12 @@
     .tbl {
         border-collapse: collapse;
         table-layout: fixed;
-        width: 100%;
+        width: 95%;
     }
     .tbl-inner {
         border-collapse: collapse;
-        table-layout: auto;
-        width: auto;
+        table-layout: fixed;
+        width: 100%;
     }
     .tbl-full {
         border-collapse: collapse;
@@ -87,7 +88,7 @@
 
     .tagline {
         color: #4A5866;
-        font-size: 9.5px;
+        font-size: 10px;
         letter-spacing: 0.2px;
         line-height: 1.2;
         font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
@@ -99,7 +100,7 @@
         color: #12202E;
         letter-spacing: -0.5px;
         line-height: 1;
-        font-size: 36px;
+        font-size: 30px;
     }
 
     .section-label {
@@ -119,7 +120,7 @@
     }
 
     .client-line {
-        color: #4A5866;
+        color: #53687cff;
         font-size: 11px;
         line-height: 1.45;
         font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
@@ -129,7 +130,8 @@
     .meta-label {
         color: #4A5866;
         font-size: 10.5px;
-        text-align: left;
+        text-align: right;
+        
         font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
     }
     .meta-value {
@@ -149,7 +151,8 @@
         border-radius: 8px;
         text-align: center;
         vertical-align: middle;
-        position: relative;
+        margin-left: 15px;
+        
     }
     /* Three white horizontal lines inside the saffron square */
     .brand-logo-lines {
