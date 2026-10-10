@@ -151,8 +151,6 @@
         border-radius: 8px;
         text-align: center;
         vertical-align: middle;
-        margin-left: 15px;
-        
     }
     /* Three white horizontal lines inside the saffron square */
     .brand-logo-lines {
@@ -369,10 +367,10 @@
 </colgroup>
 <tr>
     <td style="vertical-align: middle;">
-        <table class="tbl-full" cellpadding="0" cellspacing="0">
+        <table cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
         <tr>
             {{-- Logo mark (saffron square + 3 white lines) --}}
-            <td style="width: 56px; vertical-align: middle;">
+            <td style="width: 44px; vertical-align: middle;">
                 <div class="brand-logo">
                     <div class="brand-logo-lines">
                         <div></div>
