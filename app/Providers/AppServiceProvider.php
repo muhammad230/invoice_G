@@ -4,9 +4,11 @@ namespace App\Providers;
 
 use App\Models\Client;
 use App\Models\Invoice;
+use App\Models\Payment;
 use App\Models\Product;
 use App\Policies\ClientPolicy;
 use App\Policies\InvoicePolicy;
+use App\Policies\PaymentPolicy;
 use App\Policies\ProductPolicy;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Gate;
@@ -33,6 +35,7 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::policy(Client::class, ClientPolicy::class);
         Gate::policy(Invoice::class, InvoicePolicy::class);
+        Gate::policy(Payment::class, PaymentPolicy::class);
         Gate::policy(Product::class, ProductPolicy::class);
     }
 }

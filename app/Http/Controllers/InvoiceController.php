@@ -293,7 +293,7 @@ class InvoiceController extends Controller
     public function show(Invoice $invoice): View
     {
         $this->authorize('view', $invoice);
-        $invoice->load(['client', 'items']);
+        $invoice->load(['client', 'items', 'payments']);
 
         return view('invoices.show', compact('invoice'));
     }
@@ -443,20 +443,6 @@ class InvoiceController extends Controller
         session()->flash('success', "Invoice <strong>{$number}</strong> deleted.");
 
         return redirect()->route('invoices.index');
-    }
-
-    /**
-     * POST /invoices/{invoice}/mark-paid — flip status to paid.
-     */
-    public function markPaid(Invoice $invoice): RedirectResponse
-    {
-        $this->authorize('update', $invoice);
-
-        $invoice->update(['status' => Invoice::STATUS_PAID]);
-
-        session()->flash('success', "Invoice <strong>{$invoice->invoice_number}</strong> marked as paid.");
-
-        return redirect()->route('invoices.show', $invoice);
     }
 
     /**

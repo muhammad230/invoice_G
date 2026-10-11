@@ -61,14 +61,12 @@
                 </form>
 
                 @if ($invoice->status !== \App\Models\Invoice::STATUS_PAID)
-                    <form method="POST"
-                          action="{{ route('invoices.mark-paid', $invoice) }}"
-                          class="d-inline m-0">
-                        @csrf
-                        <button type="submit" class="btn btn-ink">
-                            <i class="bi bi-check-circle me-1"></i> Mark as paid
-                        </button>
-                    </form>
+                    <button type="button"
+                            class="btn btn-ink"
+                            data-bs-toggle="modal"
+                            data-bs-target="#markPaidModal">
+                        <i class="bi bi-check-circle me-1"></i> Mark as paid
+                    </button>
                 @endif
 
                 <a href="{{ route('invoices.edit', $invoice) }}" class="btn btn-outline-ink">
@@ -154,6 +152,53 @@
                             <p class="mb-0 ink" style="white-space: pre-wrap;">
                                 {{ $invoice->notes }}
                             </p>
+                        </div>
+                    </div>
+                @endif
+
+                {{-- Payments ledger for this invoice ------------------------- --}}
+                @if ($invoice->payments->isNotEmpty())
+                    <div class="card" style="border-radius: var(--radius); border: none; box-shadow: var(--shadow-sm);">
+                        <div class="card-body p-4">
+                            <h2 class="mb-3" style="font-size: 1.125rem;">
+                                <i class="bi bi-cash-coin me-2" style="color: var(--sage);"></i>
+                                Payments
+                            </h2>
+
+                            <ul class="list-unstyled mb-0">
+                                @foreach ($invoice->payments as $payment)
+                                    <li class="d-flex align-items-start justify-content-between gap-3 {{ !$loop->last ? 'pb-3 mb-3' : '' }}"
+                                        @if (!$loop->last) style="border-bottom: 1px solid rgba(18,32,46,0.08);" @endif>
+                                        <div>
+                                            <div class="fw-semibold">{{ $payment->method_label }}</div>
+                                            <div class="ink-soft" style="font-size: 0.78rem;">
+                                                {{ $payment->paid_on->format('M j, Y') }}
+                                                @if ($payment->reference)
+                                                    · {{ $payment->reference }}
+                                                @endif
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                            <span class="fw-semibold" style="font-variant-numeric: tabular-nums;">
+                                                {{ $payment->amount_formatted }}
+                                            </span>
+                                            <form method="POST"
+                                                  action="{{ route('payments.destroy', $payment) }}"
+                                                  class="m-0"
+                                                  onsubmit="return confirm('Undo this payment? Invoice {{ $invoice->invoice_number }} will go back to pending.');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit"
+                                                        class="btn btn-sm btn-outline-ink"
+                                                        title="Undo this payment"
+                                                        aria-label="Undo this payment">
+                                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </li>
+                                @endforeach
+                            </ul>
                         </div>
                     </div>
                 @endif
@@ -307,4 +352,8 @@
         </div>
     </div>
 </section>
+
+@if ($invoice->status !== \App\Models\Invoice::STATUS_PAID)
+    @include('partials.mark-paid-modal', ['invoice' => $invoice, 'methods' => \App\Models\Payment::methods()])
+@endif
 @endsection

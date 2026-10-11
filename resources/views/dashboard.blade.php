@@ -305,14 +305,9 @@
                                                         @if ($inv->status !== \App\Models\Invoice::STATUS_PAID)
                                                             <li><hr class="dropdown-divider"></li>
                                                             <li>
-                                                                <form method="POST" action="{{ route('invoices.mark-paid', $inv) }}"
-                                                                      class="m-0"
-                                                                      onsubmit="event.preventDefault(); this.submit();">
-                                                                    @csrf
-                                                                    <button type="submit" class="dropdown-item" style="color: var(--sage);">
-                                                                        <i class="bi bi-check-circle" style="color: var(--sage) !important;"></i> Mark as Paid
-                                                                    </button>
-                                                                </form>
+                                                                <a class="dropdown-item" href="{{ route('invoices.show', $inv) }}" style="color: var(--sage);">
+                                                                    <i class="bi bi-check-circle" style="color: var(--sage) !important;"></i> Mark as Paid
+                                                                </a>
                                                             </li>
                                                         @endif
                                                     </ul>

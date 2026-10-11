@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\BusinessProfileController;
+use App\Http\Controllers\PaymentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -67,9 +68,16 @@ Route::middleware('auth')->group(function () {
     // Invoices resource + extra actions
     Route::resource('invoices', InvoiceController::class);
 
-    // Mark as paid (single status flip)
-    Route::post('/invoices/{invoice}/mark-paid', [InvoiceController::class, 'markPaid'])
-        ->name('invoices.mark-paid');
+    // Payments ledger (all recorded payments, scoped to the current user)
+    Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
+
+    // Mark an invoice as paid (records a payment + flips its status)
+    Route::post('/invoices/{invoice}/pay', [PaymentController::class, 'store'])
+        ->name('invoices.pay');
+
+    // Undo a payment (deletes it and reopens the invoice)
+    Route::delete('/payments/{payment}', [PaymentController::class, 'destroy'])
+        ->name('payments.destroy');
 
     // Duplicate an invoice (copy with new number + today)
     Route::post('/invoices/{invoice}/duplicate', [InvoiceController::class, 'duplicate'])

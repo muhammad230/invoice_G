@@ -77,6 +77,14 @@ class Invoice extends Model
         return $this->hasMany(InvoiceItem::class);
     }
 
+    /**
+     * Payments recorded against this invoice.
+     */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
     // ------------------------------------------------------------------
     // Money accessors (cents → decimal)
     // ------------------------------------------------------------------

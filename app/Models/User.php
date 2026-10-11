@@ -74,6 +74,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Payments recorded by this user (across all invoices).
+     */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    /**
      * Single business profile row (1 per user, with unique FK).
      */
     public function businessProfile(): HasOne
