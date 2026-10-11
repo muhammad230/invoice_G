@@ -27,6 +27,7 @@
         $item('invoices.create',             'bi-file-earmark-plus', 'Create Invoice', ['invoice.create', 'invoices.create']),
         $item('invoices.index',              'bi-receipt-cutoff',   'Invoices', ['invoices.*', 'invoices.pdf', 'invoices.pay', 'invoices.duplicate']),
         $item('payments.index',              'bi-cash-coin',        'Payments', ['payments.*']),
+        $item('reports.index',               'bi-bar-chart-line-fill','Reports', ['reports.*']),
         $item('clients.index',               'bi-people-fill',      'Clients', ['clients.*']),
         $item('products.index',              'bi-bag-check-fill',   'Products &amp; Services', ['products.*']),
         $item('settings.business-profile.edit','bi-gear-fill',     'Settings', ['settings.*']),

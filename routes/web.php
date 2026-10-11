@@ -7,6 +7,7 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\BusinessProfileController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\ReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -78,6 +79,18 @@ Route::middleware('auth')->group(function () {
     // Undo a payment (deletes it and reopens the invoice)
     Route::delete('/payments/{payment}', [PaymentController::class, 'destroy'])
         ->name('payments.destroy');
+
+    // Reports: filters, chart JSON endpoints (no page reload) and CSV export
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/chart/revenue-by-month', [ReportController::class, 'revenueByMonth'])
+        ->name('reports.chart.revenue-by-month');
+    Route::get('/reports/chart/paid-unpaid', [ReportController::class, 'paidUnpaid'])
+        ->name('reports.chart.paid-unpaid');
+    Route::get('/reports/chart/top-clients', [ReportController::class, 'topClients'])
+        ->name('reports.chart.top-clients');
+    Route::get('/reports/chart/revenue-by-service', [ReportController::class, 'revenueByService'])
+        ->name('reports.chart.revenue-by-service');
+    Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
 
     // Duplicate an invoice (copy with new number + today)
     Route::post('/invoices/{invoice}/duplicate', [InvoiceController::class, 'duplicate'])
