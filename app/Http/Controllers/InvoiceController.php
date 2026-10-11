@@ -8,7 +8,7 @@ use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Product;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\InvoicePdfService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -93,7 +93,7 @@ class InvoiceController extends Controller
         $user = auth()->user();
 
         $query = Invoice::where('user_id', $user->id)
-            ->with(['client', 'items']);
+            ->with(['client', 'items', 'user']);
 
         // Search by invoice number OR client name.
         $q = trim((string) $request->input('q', ''));
@@ -293,7 +293,7 @@ class InvoiceController extends Controller
     public function show(Invoice $invoice): View
     {
         $this->authorize('view', $invoice);
-        $invoice->load(['client', 'items', 'payments']);
+        $invoice->load(['client', 'items', 'payments', 'user', 'emails']);
 
         return view('invoices.show', compact('invoice'));
     }
@@ -523,74 +523,13 @@ class InvoiceController extends Controller
 
     /**
      * GET /invoices/{invoice}/pdf — stream PDF from a persisted invoice.
-     * InvoicePolicy@view gates access; falls back to user's BusinessProfile
-     * for logo / business info when the invoice has none stored.
+     * InvoicePolicy@view gates access. The PDF document itself is built by
+     * InvoicePdfService so the emailed attachment is byte-for-byte the same.
      */
-    public function download(Invoice $invoice): Response
+    public function download(Invoice $invoice, InvoicePdfService $pdfService): Response
     {
         $this->authorize('view', $invoice);
-        $invoice->load(['client', 'items', 'user.businessProfile']);
 
-        $currencyInfo = Invoice::currencies()[$invoice->currency]
-            ?? Invoice::currencies()['USD'];
-
-        $itemsForView = $invoice->items->map(function (InvoiceItem $item) {
-            $details = trim((string) ($item->details ?? ''));
-
-            return [
-                'description' => $item->description,
-                'details'     => $details === '' ? null : $details,
-                'quantity'    => $item->quantity,
-                'price'       => $item->price / 100,
-                'line_total'  => $item->total / 100,
-            ];
-        })->all();
-
-        $totals = [
-            'subtotal' => $invoice->subtotal / 100,
-            'tax'      => $invoice->tax_amount / 100,
-            'tax_pct'  => (float) $invoice->tax_percent,
-            'discount' => $invoice->discount / 100,
-            'total'    => $invoice->total / 100,
-        ];
-
-        $profile = $invoice->user?->businessProfile;
-
-        $viewData = [
-            'business_name'    => $invoice->business_name    ?? ($profile?->business_name ?? $invoice->user?->name ?? 'Your business'),
-            'business_email'   => $invoice->business_email   ?? ($profile?->email         ?? null),
-            'business_phone'   => $invoice->business_phone   ?? ($profile?->phone         ?? null),
-            'business_address' => $invoice->business_address ?? ($profile?->address       ?? null),
-            'business_website' => $invoice->business_website ?? ($profile?->website       ?? null),
-            'business_tagline' => $invoice->business_tagline ?? ($profile?->tagline       ?? null),
-            'business_tax'     => $profile?->tax_number,
-            'bank_name'          => $invoice->business_bank_name      ?? ($profile?->bank_name       ?? null),
-            'account_title'      => $invoice->business_account_title  ?? ($profile?->account_title   ?? null),
-            'account_number'     => $invoice->business_account_number ?? ($profile?->account_number  ?? null),
-            'iban'               => $invoice->business_iban           ?? ($profile?->iban            ?? null),
-            'payment_method'     => $invoice->business_payment_method ?? ($profile?->payment_method  ?? null),
-            'signature_name'     => $invoice->business_signature_name ?? ($profile?->signature_name  ?? null),
-            'signature_title'    => $invoice->business_signature_title ?? ($profile?->signature_title ?? null),
-            'client_name'      => optional($invoice->client)->name ?? '—',
-            'client_email'     => optional($invoice->client)->email,
-            'client_phone'     => optional($invoice->client)->phone,
-            'client_address'   => optional($invoice->client)->address,
-            'invoice_number'   => $invoice->invoice_number,
-            'invoice_date'     => $invoice->invoice_date->format('M j, Y'),
-            'due_date'         => optional($invoice->due_date)?->format('M j, Y'),
-            'status'           => $invoice->display_status,
-            'currency'         => $invoice->currency,
-            'currency_symbol'  => $currencyInfo['symbol'],
-            'items'            => $itemsForView,
-            'totals'           => $totals,
-            'notes'            => $invoice->notes,
-            'logo_data'        => $invoice->logo_data ?? ($profile?->logo_base64 ?? null),
-        ];
-
-        $pdf = Pdf::loadView('invoice.pdf', $viewData)->setPaper('a4', 'portrait');
-
-        $safeNumber = preg_replace('/[^\w\-]/', '-', $invoice->invoice_number) ?: 'invoice';
-
-        return $pdf->stream("invoice-{$safeNumber}.pdf");
+        return $pdfService->render($invoice)->stream($pdfService->filename($invoice));
     }
 }

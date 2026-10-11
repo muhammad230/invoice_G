@@ -44,8 +44,33 @@
                     {{ $statusLabel }}
                 </span>
 
+                @if ($invoice->sent_at)
+                    <span class="badge rounded-pill"
+                          style="font-size: 0.8rem; padding: 0.5rem 0.85rem; background: color-mix(in srgb, var(--sage) 15%, #fff); color: var(--sage); border: 1px solid color-mix(in srgb, var(--sage) 35%, #fff);">
+                        <i class="bi bi-envelope-check me-1"></i>Sent on {{ $invoice->sent_at->format('M j, Y') }}
+                    </span>
+                @endif
+
+                @if ($invoice->status !== \App\Models\Invoice::STATUS_PAID)
+                    <button type="button"
+                            class="btn btn-saffron"
+                            data-bs-toggle="modal"
+                            data-bs-target="#sendEmailModal-invoice-{{ $invoice->id }}">
+                        <i class="bi bi-envelope-paper me-1"></i> Send invoice
+                    </button>
+
+                    @if (in_array($invoice->display_status, ['pending', 'overdue'], true))
+                        <button type="button"
+                                class="btn btn-outline-ink"
+                                data-bs-toggle="modal"
+                                data-bs-target="#sendEmailModal-reminder-{{ $invoice->id }}">
+                            <i class="bi bi-bell me-1"></i> Send reminder
+                        </button>
+                    @endif
+                @endif
+
                 <a href="{{ route('invoices.pdf', $invoice) }}"
-                   class="btn btn-saffron"
+                   class="btn btn-outline-ink"
                    target="_blank" rel="noopener">
                     <i class="bi bi-filetype-pdf me-1"></i> Download PDF
                 </a>
@@ -87,8 +112,6 @@
                 </form>
             </div>
         </div>
-
-        @include('partials.alerts')
 
         {{-- Invoice view --------------------------------------------------- --}}
         <div class="row g-4 g-lg-5">
@@ -202,6 +225,44 @@
                         </div>
                     </div>
                 @endif
+
+                {{-- Email history -------------------------------------- --}}
+                <div class="card" style="border-radius: var(--radius); border: none; box-shadow: var(--shadow-sm);">
+                    <div class="card-body p-4">
+                        <h2 class="mb-3" style="font-size: 1.125rem;">
+                            <i class="bi bi-envelope-paper me-2" style="color: var(--saffron-dark);"></i>
+                            Email history
+                        </h2>
+
+                        @if ($invoice->emails->isEmpty())
+                            <p class="ink-soft mb-0" style="font-size: 0.875rem;">
+                                No emails sent yet. Use <strong>Send invoice</strong> to email
+                                this invoice to your client.
+                            </p>
+                        @else
+                            <ul class="list-unstyled mb-0">
+                                @foreach ($invoice->emails as $email)
+                                    <li class="d-flex align-items-start justify-content-between gap-3 {{ !$loop->last ? 'pb-3 mb-3' : '' }}"
+                                        @if (!$loop->last) style="border-bottom: 1px solid rgba(18,32,46,0.08);" @endif>
+                                        <div style="min-width: 0;">
+                                            <div class="fw-semibold">{{ $email->type_label }}</div>
+                                            <div class="ink-soft text-truncate" style="font-size: 0.78rem;">
+                                                {{ $email->to_email }}
+                                            </div>
+                                            <div class="ink-soft" style="font-size: 0.72rem;">
+                                                {{ $email->created_at->format('M j, Y · g:i a') }}
+                                            </div>
+                                        </div>
+                                        <span class="badge rounded-pill flex-shrink-0 {{ $email->isFailed() ? 'status-overdue' : 'status-paid' }}"
+                                              @if ($email->isFailed() && $email->error) title="{{ $email->error }}" @endif>
+                                            {{ ucfirst($email->status) }}
+                                        </span>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
+                    </div>
+                </div>
             </div>
 
             {{-- Preview-like invoice sheet ------------------------------------ --}}
@@ -355,5 +416,14 @@
 
 @if ($invoice->status !== \App\Models\Invoice::STATUS_PAID)
     @include('partials.mark-paid-modal', ['invoice' => $invoice, 'methods' => \App\Models\Payment::methods()])
+@endif
+
+{{-- Send invoice / reminder modals (hidden until triggered) ---------------- --}}
+@if ($invoice->status !== \App\Models\Invoice::STATUS_PAID)
+    @include('invoices.partials.send-email-modal', ['invoice' => $invoice, 'type' => 'invoice'])
+
+    @if (in_array($invoice->display_status, ['pending', 'overdue'], true))
+        @include('invoices.partials.send-email-modal', ['invoice' => $invoice, 'type' => 'reminder'])
+    @endif
 @endif
 @endsection

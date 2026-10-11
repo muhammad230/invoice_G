@@ -83,6 +83,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Email history rows created by this user (invoice copies + reminders).
+     */
+    public function invoiceEmails(): HasMany
+    {
+        return $this->hasMany(InvoiceEmail::class);
+    }
+
+    /**
      * Single business profile row (1 per user, with unique FK).
      */
     public function businessProfile(): HasOne

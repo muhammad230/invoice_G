@@ -22,6 +22,15 @@ class InvoicePolicy
         return true;
     }
 
+    /**
+     * Ability to email an invoice / reminder to the client.
+     * Only the invoice owner may send it.
+     */
+    public function send(User $user, Invoice $invoice): bool
+    {
+        return (int) $invoice->user_id === (int) $user->id;
+    }
+
     public function update(User $user, Invoice $invoice): bool
     {
         return (int) $invoice->user_id === (int) $user->id;

@@ -46,11 +46,13 @@ class Invoice extends Model
         'business_signature_title',
         'logo_data',
         'notes',
+        'sent_at',
     ];
 
     protected $casts = [
         'invoice_date' => 'date',
         'due_date'     => 'date',
+        'sent_at'      => 'datetime',
         'tax_percent'  => 'decimal:2',
         'subtotal'     => 'integer',
         'tax_amount'   => 'integer',
@@ -83,6 +85,23 @@ class Invoice extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
+    }
+
+    /**
+     * Every email (invoice copy or reminder) sent for this invoice,
+     * newest first. Used by the "Email history" card.
+     */
+    public function emails(): HasMany
+    {
+        return $this->hasMany(InvoiceEmail::class)->latest();
+    }
+
+    /**
+     * Whether this invoice has ever been emailed to the client.
+     */
+    public function wasSent(): bool
+    {
+        return $this->sent_at !== null;
     }
 
     // ------------------------------------------------------------------

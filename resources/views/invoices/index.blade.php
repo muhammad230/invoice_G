@@ -149,6 +149,13 @@
                                         <span class="badge rounded-pill {{ $statusBadgeClass }}">
                                             {{ $statusLabel }}
                                         </span>
+                                        @if ($invoice->sent_at)
+                                            <span class="badge rounded-pill"
+                                                  style="background: color-mix(in srgb, var(--sage) 15%, #fff); color: var(--sage); border: 1px solid color-mix(in srgb, var(--sage) 35%, #fff);"
+                                                  title="Emailed {{ $invoice->sent_at->format('M j, Y') }}">
+                                                <i class="bi bi-envelope-check me-1"></i>Sent
+                                            </span>
+                                        @endif
                                     </td>
                                     <td class="text-end">
                                         <div class="d-flex justify-content-end gap-2 flex-wrap">
@@ -164,6 +171,15 @@
                                                title="Download PDF">
                                                 <i class="bi bi-filetype-pdf"></i><span class="d-none d-sm-inline ms-1">PDF</span>
                                             </a>
+                                            @if ($invoice->status !== \App\Models\Invoice::STATUS_PAID)
+                                                <button type="button"
+                                                        class="btn btn-sm btn-outline-ink"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#sendEmailModal-invoice-{{ $invoice->id }}"
+                                                        title="Email this invoice">
+                                                    <i class="bi bi-envelope-paper"></i><span class="d-none d-sm-inline ms-1">Email</span>
+                                                </button>
+                                            @endif
                                             <form method="POST"
                                                   action="{{ route('invoices.duplicate', $invoice) }}"
                                                   class="d-inline m-0"
@@ -187,6 +203,13 @@
             <div class="mt-4 d-flex justify-content-center">
                 {{ $invoices->links() }}
             </div>
+
+            {{-- Send-invoice modals for each row (rendered outside the table). --}}
+            @foreach ($invoices as $invoice)
+                @if ($invoice->status !== \App\Models\Invoice::STATUS_PAID)
+                    @include('invoices.partials.send-email-modal', ['invoice' => $invoice, 'type' => 'invoice'])
+                @endif
+            @endforeach
         @endif
     </div>
 </section>

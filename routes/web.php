@@ -8,6 +8,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\BusinessProfileController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\InvoiceEmailController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ReportController;
@@ -113,6 +114,12 @@ Route::middleware('auth')->group(function () {
     // Mark an invoice as paid (records a payment + flips its status)
     Route::post('/invoices/{invoice}/pay', [PaymentController::class, 'store'])
         ->name('invoices.pay');
+
+    // Email an invoice or a payment reminder to the client.
+    // Rate limited to 10 sends per minute per authenticated user.
+    Route::post('/invoices/{invoice}/send', [InvoiceEmailController::class, 'send'])
+        ->middleware('throttle:10,1')
+        ->name('invoices.send');
 
     // Undo a payment (deletes it and reopens the invoice)
     Route::delete('/payments/{payment}', [PaymentController::class, 'destroy'])
