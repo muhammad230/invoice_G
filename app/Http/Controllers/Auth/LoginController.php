@@ -28,6 +28,16 @@ class LoginController extends Controller
     protected $redirectTo = '/dashboard';
 
     /**
+     * Lock out after 5 failed attempts, for one minute (per email + IP).
+     *
+     * @var int
+     */
+    protected $maxAttempts = 5;
+
+    /** @var int */
+    protected $decayMinutes = 1;
+
+    /**
      * Create a new controller instance.
      *
      * @return void

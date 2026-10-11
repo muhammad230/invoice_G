@@ -192,9 +192,9 @@
                                 </li>
                                 <li><hr class="dropdown-divider d-md-none"></li>
                                 <li>
-                                    <a class="dropdown-item" href="{{ route('settings.business-profile.edit') }}">
+                                    <a class="dropdown-item" href="{{ route('account.edit') }}">
                                         <i class="bi bi-person-gear me-2" style="color: var(--ink-soft);"></i>
-                                        Profile
+                                        Account
                                     </a>
                                 </li>
                                 <li><hr class="dropdown-divider"></li>

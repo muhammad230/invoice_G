@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Notifications\ResetPasswordNotification;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -107,5 +108,13 @@ class User extends Authenticatable
         $num = (int) preg_replace('/\D/', '', $last);
 
         return sprintf('INV-%03d', $num + 1);
+    }
+
+    /**
+     * Send the branded InvoiceFlow password reset notification.
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new ResetPasswordNotification($token));
     }
 }

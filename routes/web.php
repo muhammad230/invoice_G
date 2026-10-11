@@ -5,6 +5,7 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\AccountController;
 use App\Http\Controllers\BusinessProfileController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ReportController;
@@ -65,6 +66,15 @@ Route::middleware('auth')->group(function () {
         ->name('settings.business-profile.edit');
     Route::put('/settings/business-profile', [BusinessProfileController::class, 'update'])
         ->name('settings.business-profile.update');
+
+    // Account management (self-service: profile, password, delete)
+    Route::get('/account', [AccountController::class, 'edit'])->name('account.edit');
+    Route::put('/account/profile', [AccountController::class, 'updateProfile'])
+        ->name('account.profile.update');
+    Route::put('/account/password', [AccountController::class, 'updatePassword'])
+        ->name('account.password.update');
+    Route::delete('/account', [AccountController::class, 'destroy'])
+        ->name('account.destroy');
 
     // Invoices resource + extra actions
     Route::resource('invoices', InvoiceController::class);
