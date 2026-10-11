@@ -57,25 +57,35 @@ class DashboardController extends Controller
     {
         $counts = $this->currencyCounts($user);
 
+        $all = Invoice::currencies();
+
         $code = strtoupper((string) $requested);
-        if ($code === '' || !isset($counts[$code])) {
+        if ($code === '' || !isset($all[$code])) {
             $code = array_key_first($counts) ?: 'USD';
         }
 
-        $all = Invoice::currencies();
         $meta = $all[$code] ?? $all['USD'];
 
+        // The selector lists every supported currency once the user has any
+        // invoice, so currencies they don't use yet (e.g. EUR) are still
+        // selectable. Currencies actually in use come first, ordered by how
+        // many invoices they have; unused ones follow in canonical order.
         $available = [];
-        foreach ($counts as $candidate => $cnt) {
-            if (!isset($all[$candidate])) {
-                continue;
+        if ($counts !== []) {
+            $ordered = array_keys($counts);
+            foreach (array_keys($all) as $candidate) {
+                if (!in_array($candidate, $ordered, true)) {
+                    $ordered[] = $candidate;
+                }
             }
-            $available[] = [
-                'code'   => $candidate,
-                'symbol' => $all[$candidate]['symbol'],
-                'name'   => $all[$candidate]['name'],
-                'count'  => (int) $cnt,
-            ];
+            foreach ($ordered as $candidate) {
+                $available[] = [
+                    'code'   => $candidate,
+                    'symbol' => $all[$candidate]['symbol'],
+                    'name'   => $all[$candidate]['name'],
+                    'count'  => (int) ($counts[$candidate] ?? 0),
+                ];
+            }
         }
 
         return [
@@ -83,6 +93,7 @@ class DashboardController extends Controller
             'symbol'    => $meta['symbol'],
             'name'      => $meta['name'],
             'mixed'     => count($counts) > 1,
+            'has_any'   => $counts !== [],
             'list'      => array_keys($counts),
             'available' => $available,
         ];

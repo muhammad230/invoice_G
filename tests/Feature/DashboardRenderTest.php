@@ -46,7 +46,7 @@ class DashboardRenderTest extends TestCase
         // (1) Currency selector replaced the "multiple currencies" banner.
         $this->assertStringNotContainsString('You use multiple currencies', $html);
         $this->assertStringContainsString('dash-currency-btn', $html);
-        // Only currencies the user actually has invoices in are listed.
+        // Every supported currency is listed once the user has any invoice.
         foreach (['USD', 'GBP', 'PKR', 'EUR'] as $code) {
             $this->assertStringContainsString('currency=' . $code, $html);
         }
@@ -138,6 +138,42 @@ class DashboardRenderTest extends TestCase
 
         // Unknown currency falls back to the most-used one (no error).
         $this->actingAs($user)->get('/dashboard?currency=ZZZ')->assertStatus(200);
+    }
+
+    public function test_currency_selector_lists_all_supported_currencies_even_without_invoices(): void
+    {
+        $user = \App\Models\User::factory()->create();
+
+        $client = \App\Models\Client::query()->create([
+            'user_id' => $user->id,
+            'name'    => 'Acme Co',
+            'email'   => 'billing@acme.test',
+        ]);
+
+        \App\Models\Invoice::query()->create([
+            'user_id'        => $user->id,
+            'client_id'      => $client->id,
+            'invoice_number' => 'INV-0001',
+            'invoice_date'   => now()->toDateString(),
+            'currency'       => 'USD',
+            'status'         => \App\Models\Invoice::STATUS_PENDING,
+            'total'          => 150000,
+        ]);
+
+        $html = $this->actingAs($user)->get('/dashboard')->getContent();
+
+        // The user only has USD invoices, but every supported currency must
+        // still be selectable — EUR included.
+        foreach (['USD', 'EUR', 'GBP', 'PKR'] as $code) {
+            $this->assertStringContainsString('currency=' . $code, $html);
+        }
+        $this->assertStringContainsString('Euro', $html);
+
+        // Selecting a currency with no invoices must not error and must stick
+        // (not silently fall back to the most-used one).
+        $response = $this->actingAs($user)->get('/dashboard?currency=EUR');
+        $response->assertStatus(200);
+        $this->assertStringContainsString('data-currency="EUR"', $response->getContent());
     }
 
     public function test_chart_endpoint_uses_requested_currency_and_total_matches_plotted_values(): void

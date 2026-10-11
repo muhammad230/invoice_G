@@ -38,7 +38,7 @@
     };
 
     /* Empty-state check */
-    $hasAnyInvoices = ($stats['total_all_count'] ?? 0) > 0;
+    $hasAnyInvoices = $currency['has_any'] ?? false;
 @endphp
 
 @section('content')
