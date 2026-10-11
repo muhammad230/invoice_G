@@ -7,6 +7,8 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\BusinessProfileController;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\PageController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ReportController;
 
@@ -25,6 +27,32 @@ use App\Http\Controllers\ReportController;
 Route::get('/', function () {
     return view('home');
 })->name('home');
+
+/*
+|--------------------------------------------------------------------------
+| Public marketing / info pages (no authentication required)
+|--------------------------------------------------------------------------
+| These render with the shared public layout, navbar and footer.
+*/
+Route::get('/features', [PageController::class, 'features'])->name('features');
+Route::get('/pricing',  [PageController::class, 'pricing'])->name('pricing');
+Route::get('/help',     [PageController::class, 'help'])->name('help');
+Route::get('/privacy',  [PageController::class, 'privacy'])->name('privacy');
+Route::get('/terms',    [PageController::class, 'terms'])->name('terms');
+
+// Contact form: GET shows the form, POST stores the message.
+// Rate limited to 5 submissions per minute per IP to deter abuse.
+Route::get('/contact',  [ContactController::class, 'show'])->name('contact');
+Route::post('/contact', [ContactController::class, 'send'])
+    ->middleware('throttle:5,1')
+    ->name('contact.send');
+
+// XML sitemap listing the public pages (referenced by public/robots.txt).
+Route::get('/sitemap.xml', function () {
+    return response()
+        ->view('sitemap')
+        ->header('Content-Type', 'text/xml');
+})->name('sitemap');
 
 /*
 |--------------------------------------------------------------------------

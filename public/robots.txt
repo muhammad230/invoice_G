@@ -1,2 +1,15 @@
+# robots.txt for InvoiceFlow
+# Public marketing pages are indexable; private app pages are not.
+
 User-agent: *
-Disallow:
+Disallow: /dashboard
+Disallow: /account
+Disallow: /clients
+Disallow: /invoices
+Disallow: /products
+Disallow: /payments
+Disallow: /reports
+Disallow: /settings
+
+# Update the domain to your production URL before launch.
+Sitemap: http://localhost/sitemap.xml

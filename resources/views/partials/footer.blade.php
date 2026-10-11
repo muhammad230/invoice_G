@@ -22,9 +22,9 @@
             <div class="col-6 col-md-2 offset-md-1">
                 <h4 class="footer-heading">Product</h4>
                 <ul class="footer-links">
-                    <li><a href="{{ route('home') }}#features">Features</a></li>
+                    <li><a href="{{ route('features') }}">Features</a></li>
                     <li><a href="{{ route('home') }}#how">How it works</a></li>
-                    <li><a href="{{ route('home') }}#pricing">Pricing</a></li>
+                    <li><a href="{{ route('pricing') }}">Pricing</a></li>
                 </ul>
             </div>
 
@@ -32,9 +32,8 @@
             <div class="col-6 col-md-2">
                 <h4 class="footer-heading">Company</h4>
                 <ul class="footer-links">
-                    <li><a href="#">About</a></li>
-                    <li><a href="#">Blog</a></li>
-                    <li><a href="#">Careers</a></li>
+                    <li><a href="{{ route('privacy') }}">Privacy</a></li>
+                    <li><a href="{{ route('terms') }}">Terms</a></li>
                 </ul>
             </div>
 
@@ -42,9 +41,8 @@
             <div class="col-6 col-md-2">
                 <h4 class="footer-heading">Support</h4>
                 <ul class="footer-links">
-                    <li><a href="#">Help center</a></li>
-                    <li><a href="#">Contact us</a></li>
-                    <li><a href="#">Privacy</a></li>
+                    <li><a href="{{ route('help') }}">Help center</a></li>
+                    <li><a href="{{ route('contact') }}">Contact us</a></li>
                 </ul>
             </div>
         </div>

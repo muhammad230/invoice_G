@@ -3,9 +3,22 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="InvoiceFlow - Invoicing for freelancers and small businesses. Get paid on time, every time.">
+
+    {{-- Per-page meta description (each view sets @section('meta_description')) --}}
+    <meta name="description" content="@yield('meta_description', 'InvoiceFlow — simple, beautiful invoicing for freelancers and small businesses. Create invoices, track payments, and get paid on time.')">
 
     <title>@yield('title', 'InvoiceFlow')</title>
+
+    {{-- Favicon --}}
+    <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
+
+    {{-- Open Graph (social sharing) --}}
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="InvoiceFlow">
+    <meta property="og:title" content="@yield('title', 'InvoiceFlow')">
+    <meta property="og:description" content="@yield('meta_description', 'InvoiceFlow — simple, beautiful invoicing for freelancers and small businesses.')">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta name="twitter:card" content="summary">
 
     <!-- Google Fonts: Fraunces (headings) + Inter (body) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

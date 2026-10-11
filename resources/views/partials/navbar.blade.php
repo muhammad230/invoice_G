@@ -24,13 +24,16 @@
             <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
                 @guest
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('home') }}#features">Features</a>
+                        <a class="nav-link" href="{{ route('features') }}">Features</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('home') }}#how">How it works</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('home') }}#pricing">Pricing</a>
+                        <a class="nav-link" href="{{ route('pricing') }}">Pricing</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('help') }}">Help</a>
                     </li>
                 @else
                     <li class="nav-item">

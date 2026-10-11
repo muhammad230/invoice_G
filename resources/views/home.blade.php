@@ -27,7 +27,7 @@
                         Create invoice
                         <i class="bi bi-arrow-right"></i>
                     </a>
-                    <a href="#how" class="btn btn-outline-ink">
+                    <a href="{{ route('features') }}" class="btn btn-outline-ink">
                         See how it works
                     </a>
                 </div>
@@ -366,6 +366,14 @@
                     </a>
                 </div>
             </div>
+        </div>
+
+        {{-- Link to the dedicated pricing page --}}
+        <div class="text-center mt-5">
+            <a href="{{ route('pricing') }}" class="btn btn-outline-ink">
+                See full pricing
+                <i class="bi bi-arrow-right"></i>
+            </a>
         </div>
     </div>
 </section>
