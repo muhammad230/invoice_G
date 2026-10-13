@@ -26,6 +26,23 @@
 
     <!-- Theme controller: sets data-theme before first paint (no flash) -->
     <script src="{{ asset('js/theme.js') }}"></script>
+
+    <!-- Motion: flag scroll/page animations before first paint (no flash).
+         The failsafe removes the flag if motion.js never boots. -->
+    <script>
+        (function () {
+            if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                return;
+            }
+            var d = document.documentElement;
+            d.classList.add('js-motion');
+            window.__ifMotionReady = false;
+            setTimeout(function () {
+                if (!window.__ifMotionReady) { d.classList.remove('js-motion'); }
+            }, 2500);
+        })();
+    </script>
+    <script src="{{ asset('js/motion.js') }}" defer></script>
 </head>
 <body class="app-shell">
     @php

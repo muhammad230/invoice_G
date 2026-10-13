@@ -2913,3 +2913,63 @@ html[data-theme="dark"] .list-group-item-action:focus {
         scroll-behavior: auto !important;
     }
 }
+
+/* ============================================================
+   MOTION — scroll reveal + page transitions
+   Active only while <html class="js-motion"> is set (added pre-paint
+   by an inline head script; see the layouts). The reveal uses the
+   individual `translate` property — never `transform` — so it cannot
+   clash with the hover transforms defined elsewhere. The selector
+   list here MUST mirror REVEAL_SELECTOR in public/js/motion.js.
+   ============================================================ */
+@media (prefers-reduced-motion: no-preference) {
+
+    .js-motion :is(main, .app-content) :is(
+        [data-reveal],
+        section,
+        .page-hero,
+        .feature-card,
+        .pricing-card,
+        .stat-card,
+        .dash-stat,
+        .dash-date-card,
+        .invoice-card,
+        .pending-card,
+        .contact-card,
+        .auth-card,
+        .panel-card,
+        .comparison-table,
+        .cta-section
+    ) {
+        opacity: 0;
+    }
+
+    .js-motion :is(main, .app-content) .faq-accordion .accordion-item {
+        opacity: 0;
+    }
+
+    .js-motion .is-revealed {
+        animation: ifReveal 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+    }
+
+    /* Final, animation-free visible state (see motion.js `settle`). */
+    .js-motion .is-shown {
+        opacity: 1 !important;
+    }
+
+    /* Page-leave: fade the whole page out before navigating away. */
+    .js-motion main,
+    .js-motion .app-content {
+        transition: opacity 0.22s ease, translate 0.22s ease;
+    }
+    body.if-leaving main,
+    body.if-leaving .app-content {
+        opacity: 0;
+        translate: 0 -10px;
+    }
+}
+
+@keyframes ifReveal {
+    from { opacity: 0; translate: 0 18px; }
+    to   { opacity: 1; translate: 0 0; }
+}
