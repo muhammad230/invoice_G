@@ -63,6 +63,7 @@
 
                 @guest
                     <a class="nav-link login-link" href="{{ route('login') }}">Login</a>
+                    <a class="btn btn-saffron" href="{{ route('register') }}">Register</a>
                     <a class="btn btn-ink" href="{{ route('invoice.create') }}">
                         Get started free
                         <i class="bi bi-arrow-right" aria-hidden="true"></i>
