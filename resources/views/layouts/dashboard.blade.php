@@ -23,6 +23,9 @@
 
     <!-- InvoiceFlow Custom Styles -->
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+
+    <!-- Theme controller: sets data-theme before first paint (no flash) -->
+    <script src="{{ asset('js/theme.js') }}"></script>
 </head>
 <body class="app-shell">
     @php
@@ -147,6 +150,9 @@
                             </button>
                         </div>
                     </form>
+
+                    {{-- Theme toggle (light / dark) --}}
+                    @include('partials.theme-toggle', ['btnClass' => 'app-topbar__iconbtn'])
 
                     {{-- Right group: bell + user menu, kept together (16px gap)
                          and pushed to the far right edge with margin-left:auto --}}

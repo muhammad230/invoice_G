@@ -33,6 +33,9 @@
 
     <!-- InvoiceFlow Custom Styles -->
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+
+    <!-- Theme controller: sets data-theme before first paint (no flash) -->
+    <script src="{{ asset('js/theme.js') }}"></script>
 </head>
 <body>
     <!-- Navbar -->

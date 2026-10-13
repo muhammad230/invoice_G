@@ -59,6 +59,8 @@
 
             <!-- Right Action Buttons -->
             <div class="d-flex align-items-center gap-2 mt-3 mt-lg-0">
+                @include('partials.theme-toggle')
+
                 @guest
                     <a class="nav-link login-link" href="{{ route('login') }}">Login</a>
                     <a class="btn btn-ink" href="{{ route('invoice.create') }}">

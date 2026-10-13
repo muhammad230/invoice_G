@@ -2499,3 +2499,230 @@ body.app-shell {
         padding: 1.75rem;
     }
 }
+
+/* ============================================================
+   THEME TOGGLE (light / dark)
+   ============================================================ */
+.theme-toggle {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    flex-shrink: 0;
+}
+
+.theme-toggle .theme-toggle__icon {
+    font-size: 1rem;
+    line-height: 1;
+}
+
+/* In light mode show the moon ("go dark"); in dark mode show the sun. */
+.theme-toggle .theme-toggle__icon--light { display: none; }
+html[data-theme="dark"] .theme-toggle .theme-toggle__icon--dark { display: none; }
+html[data-theme="dark"] .theme-toggle .theme-toggle__icon--light { display: inline-block; }
+
+/* ============================================================
+   DARK THEME
+   Activated by <html data-theme="dark"> (see public/js/theme.js).
+   Most components read the tokens below; the rest of this block
+   fixes components that hard-coded light colours.
+   ============================================================ */
+html[data-theme="dark"] {
+    --paper: #0E1720;
+    --ink: #E7EEF5;              /* primary text (now light) */
+    --ink-soft: #9AA9B8;         /* muted text */
+    --saffron: #F2A33A;
+    --saffron-dark: #F6BC6A;     /* accent text must be lighter on dark */
+    --sage: #6FBF8B;
+    --overdue: #E5675C;
+    --white: #16212E;            /* card surface (was pure white) */
+    --surface: #16212E;          /* card / panel surface */
+    --surface-2: #1B2837;        /* inputs, nested surfaces */
+    --surface-strong: #0B1219;   /* navy bars, solid buttons */
+    --border: rgba(255, 255, 255, 0.12);
+    --border-soft: rgba(255, 255, 255, 0.08);
+    --hover: rgba(255, 255, 255, 0.06);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.45);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.55);
+    color-scheme: dark;
+}
+
+/* ---------- Top bar / navbar / footer borders ---------- */
+html[data-theme="dark"] .navbar-invoiceflow { border-bottom-color: var(--border-soft); }
+html[data-theme="dark"] .site-footer { border-top-color: var(--border-soft); }
+html[data-theme="dark"] .footer-bottom { border-top-color: var(--border-soft); }
+html[data-theme="dark"] .app-topbar {
+    background: rgba(14, 23, 32, 0.85);
+    border-bottom-color: var(--border-soft);
+}
+html[data-theme="dark"] .app-footer { border-top-color: var(--border-soft); }
+
+/* ---------- Search box ---------- */
+html[data-theme="dark"] .app-topbar__search .input-group-text,
+html[data-theme="dark"] .app-topbar__search .form-control,
+html[data-theme="dark"] .app-topbar__search .form-control:focus {
+    background: var(--surface-2);
+    border-color: var(--border);
+    color: var(--ink);
+}
+
+/* ---------- Cards / panels / dropdowns that hard-coded #FFFFFF ---------- */
+html[data-theme="dark"] .panel-card,
+html[data-theme="dark"] .dash-stat,
+html[data-theme="dark"] .dash-date-card,
+html[data-theme="dark"] .stat-card,
+html[data-theme="dark"] .app-dropdown-menu,
+html[data-theme="dark"] .dash-actions-menu,
+html[data-theme="dark"] .dash-currency-btn,
+html[data-theme="dark"] .stats-strip,
+html[data-theme="dark"] .invoice-card,
+html[data-theme="dark"] .pending-card {
+    background: var(--surface);
+    border-color: var(--border-soft);
+}
+html[data-theme="dark"] .panel-card .card-header { border-bottom-color: var(--border-soft); }
+html[data-theme="dark"] .dash-currency-btn:hover { background: var(--surface-2); border-color: var(--saffron); }
+html[data-theme="dark"] .dash-currency-btn--static:hover { background: var(--surface); border-color: var(--border); }
+html[data-theme="dark"] .dash-currency-menu { border-color: var(--border); }
+html[data-theme="dark"] .dash-currency-menu__count { background: rgba(255, 255, 255, 0.10); }
+
+/* ---------- Generic page borders that were dark-on-light ---------- */
+html[data-theme="dark"] .invoice-items { border-color: var(--border-soft); }
+html[data-theme="dark"] .feature-card,
+html[data-theme="dark"] .pricing-card,
+html[data-theme="dark"] .auth-card,
+html[data-theme="dark"] .contact-card,
+html[data-theme="dark"] .comparison-table,
+html[data-theme="dark"] .pricing-toggle,
+html[data-theme="dark"] .faq-accordion .accordion-item { border-color: var(--border-soft); }
+html[data-theme="dark"] .help-search .form-control,
+html[data-theme="dark"] .contact-card .form-control { border-color: var(--border); }
+html[data-theme="dark"] .dash-activity__item { border-bottom-color: var(--border-soft); }
+html[data-theme="dark"] .dashboard-empty {
+    border-color: var(--border);
+    background: linear-gradient(135deg, var(--surface) 0%, color-mix(in srgb, var(--saffron) 12%, var(--surface)) 100%);
+}
+
+/* ---------- Hover states that were dark-on-light ---------- */
+html[data-theme="dark"] .btn-ghost:hover,
+html[data-theme="dark"] .app-topbar__avatarbtn:hover,
+html[data-theme="dark"] .app-dropdown-menu .dropdown-item:hover,
+html[data-theme="dark"] .app-dropdown-menu .dropdown-item:focus-visible,
+html[data-theme="dark"] .dash-actions-menu .dropdown-item:hover,
+html[data-theme="dark"] .dash-actions-menu .dropdown-item:focus-visible,
+html[data-theme="dark"] .dash-quick-links a:hover,
+html[data-theme="dark"] .dash-quick-links a:focus-visible,
+html[data-theme="dark"] .dash-legend__row:hover,
+html[data-theme="dark"] .page-link:hover { background: var(--hover); }
+html[data-theme="dark"] .dash-stat__delta--flat { background: var(--hover); }
+html[data-theme="dark"] .dash-chart-controls { background: rgba(255, 255, 255, 0.04); }
+html[data-theme="dark"] .dash-chart-btn:hover { background: var(--hover); color: var(--ink); }
+html[data-theme="dark"] .chart-overlay { background: rgba(22, 33, 46, 0.72); }
+
+/* ---------- Solid dark surfaces (were var(--ink)/#fff) ---------- */
+html[data-theme="dark"] .app-sidebar,
+html[data-theme="dark"] .app-offcanvas,
+html[data-theme="dark"] .cta-section { background: var(--surface-strong); }
+html[data-theme="dark"] .btn-ink { background-color: var(--surface-strong); border-color: var(--surface-strong); color: #FFFFFF; }
+html[data-theme="dark"] .btn-ink:hover { background-color: #0a1017; border-color: #0a1017; color: #FFFFFF; }
+html[data-theme="dark"] .btn-search-submit { background: var(--surface-strong); border-color: var(--surface-strong); }
+html[data-theme="dark"] .btn-search-submit:hover { background: #0a1017; border-color: #0a1017; }
+html[data-theme="dark"] .dash-chart-btn.is-active { background: var(--surface-strong); color: #FFFFFF; }
+html[data-theme="dark"] .page-item.active .page-link { background: var(--surface-strong); border-color: var(--surface-strong); color: #FFFFFF; }
+html[data-theme="dark"] .dash-currency-menu .dropdown-item.active { background: var(--surface-strong); }
+html[data-theme="dark"] .pricing-toggle button.active { background: var(--surface-strong); color: #FFFFFF; }
+html[data-theme="dark"] .comparison-table thead th { background: var(--surface-strong); color: #FFFFFF; }
+
+/* ---------- Text sitting on saffron/sage accents must stay dark/white ---------- */
+html[data-theme="dark"] .sidebar-brand__icon,
+html[data-theme="dark"] .avatar,
+html[data-theme="dark"] .sidebar-nav__link.is-active,
+html[data-theme="dark"] .sidebar-nav__link.is-active:hover { color: #12202E; }
+html[data-theme="dark"] .btn-saffron,
+html[data-theme="dark"] .btn-saffron:hover,
+html[data-theme="dark"] .feature-icon,
+html[data-theme="dark"] .logo-icon,
+html[data-theme="dark"] .paid-stamp,
+html[data-theme="dark"] .step-number,
+html[data-theme="dark"] .pricing-badge,
+html[data-theme="dark"] .avatar-ring,
+html[data-theme="dark"] .floating-hero-icon,
+html[data-theme="dark"] .pricing-toggle .save-badge,
+html[data-theme="dark"] .cta-section h2 { color: #FFFFFF; }
+
+/* ---------- Soft colour chips (color-mix base was #fff) ---------- */
+html[data-theme="dark"] .stat-icon--total,
+html[data-theme="dark"] .dash-stat__icon--total { background: color-mix(in srgb, var(--ink) 18%, var(--surface)); }
+html[data-theme="dark"] .stat-icon--paid,
+html[data-theme="dark"] .dash-stat__icon--paid,
+html[data-theme="dark"] .status-paid { background: color-mix(in srgb, var(--sage) 24%, var(--surface)); border-color: color-mix(in srgb, var(--sage) 42%, var(--surface)); }
+html[data-theme="dark"] .stat-icon--pending,
+html[data-theme="dark"] .dash-stat__icon--pending,
+html[data-theme="dark"] .status-pending { background: color-mix(in srgb, var(--saffron) 26%, var(--surface)); border-color: color-mix(in srgb, var(--saffron) 48%, var(--surface)); }
+html[data-theme="dark"] .stat-icon--overdue,
+html[data-theme="dark"] .dash-stat__icon--overdue,
+html[data-theme="dark"] .status-overdue { background: color-mix(in srgb, var(--overdue) 24%, var(--surface)); border-color: color-mix(in srgb, var(--overdue) 44%, var(--surface)); }
+html[data-theme="dark"] .dash-date-card__icon { background: color-mix(in srgb, var(--saffron) 26%, var(--surface)); }
+
+/* ---------- Bootstrap helpers used by views ---------- */
+html[data-theme="dark"] .bg-white { background-color: var(--surface) !important; }
+html[data-theme="dark"] .bg-light { background-color: var(--surface-2) !important; }
+html[data-theme="dark"] .text-muted { color: var(--ink-soft) !important; }
+html[data-theme="dark"] hr { border-color: var(--border-soft); }
+html[data-theme="dark"] .btn-close:not(.app-offcanvas__close) { filter: invert(1) grayscale(1) brightness(1.8); }
+html[data-theme="dark"] .accordion-button::after { filter: invert(1) brightness(1.6); }
+
+/* ---------- Form controls / modal / dropdown defaults ---------- */
+html[data-theme="dark"] .form-control,
+html[data-theme="dark"] .form-select,
+html[data-theme="dark"] .input-group-text {
+    background-color: var(--surface-2);
+    border-color: var(--border);
+    color: var(--ink);
+}
+html[data-theme="dark"] .form-control::placeholder { color: var(--ink-soft); }
+html[data-theme="dark"] .form-control:focus,
+html[data-theme="dark"] .form-select:focus {
+    background-color: var(--surface-2);
+    border-color: var(--saffron);
+    color: var(--ink);
+}
+html[data-theme="dark"] .form-check-input { background-color: var(--surface-2); border-color: var(--border); }
+html[data-theme="dark"] .modal-content { background-color: var(--surface); border-color: var(--border-soft); color: var(--ink); }
+html[data-theme="dark"] .modal-header,
+html[data-theme="dark"] .modal-footer { border-color: var(--border-soft); }
+html[data-theme="dark"] .dropdown-menu { background-color: var(--surface); border-color: var(--border-soft); }
+html[data-theme="dark"] .dropdown-item { color: var(--ink); }
+html[data-theme="dark"] .dropdown-item:hover,
+html[data-theme="dark"] .dropdown-item:focus { background-color: var(--hover); color: var(--ink); }
+html[data-theme="dark"] .dropdown-divider { border-color: var(--border-soft); }
+
+/* ---------- Tables / pagination ---------- */
+html[data-theme="dark"] .table {
+    --bs-table-color: var(--ink);
+    --bs-table-bg: transparent;
+    --bs-table-border-color: var(--border-soft);
+}
+html[data-theme="dark"] .table > :not(caption) > * > * { border-color: var(--border-soft); }
+html[data-theme="dark"] .table thead th { color: var(--ink); }
+html[data-theme="dark"] .page-link {
+    background: var(--surface);
+    border-color: var(--border-soft);
+    color: var(--ink);
+}
+html[data-theme="dark"] .pagination {
+    --bs-pagination-bg: var(--surface);
+    --bs-pagination-color: var(--ink);
+    --bs-pagination-border-color: var(--border-soft);
+    --bs-pagination-hover-bg: var(--hover);
+    --bs-pagination-hover-color: var(--ink);
+    --bs-pagination-hover-border-color: var(--border);
+    --bs-pagination-active-bg: var(--surface-strong);
+    --bs-pagination-active-border-color: var(--surface-strong);
+    --bs-pagination-disabled-bg: var(--surface);
+    --bs-pagination-disabled-color: var(--ink-soft);
+}
