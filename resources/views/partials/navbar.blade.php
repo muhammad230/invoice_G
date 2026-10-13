@@ -62,8 +62,26 @@
                 @include('partials.theme-toggle')
 
                 @guest
-                    <a class="nav-link login-link" href="{{ route('login') }}">Login</a>
-                    <a class="btn btn-saffron" href="{{ route('register') }}">Register</a>
+                    <div class="dropdown nav-hover-dropdown">
+                        <button class="btn btn-saffron dropdown-toggle" type="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                            Register
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end navbar-account-menu">
+                            <li>
+                                <a class="dropdown-item" href="{{ route('register') }}">
+                                    <i class="bi bi-person-plus me-2" aria-hidden="true"></i>
+                                    Create account
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ route('login') }}">
+                                    <i class="bi bi-box-arrow-in-right me-2" aria-hidden="true"></i>
+                                    Login
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                     <a class="btn btn-ink" href="{{ route('invoice.create') }}">
                         Get started free
                         <i class="bi bi-arrow-right" aria-hidden="true"></i>
