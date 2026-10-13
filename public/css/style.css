@@ -2842,3 +2842,74 @@ html[data-theme="dark"] .list-group-item-action:focus {
     background-color: var(--hover);
     color: var(--ink);
 }
+
+/* ============================================================
+   MOTION — core micro-interactions
+   Tasteful hover / press / open animations. Everything here is
+   disabled for users who prefer reduced motion (guard at end).
+   ============================================================ */
+@media (prefers-reduced-motion: no-preference) {
+
+    /* Smooth cross-fade when swapping light/dark themes. */
+    body,
+    .navbar-invoiceflow,
+    .site-footer,
+    .app-topbar,
+    .app-sidebar,
+    .app-offcanvas,
+    .app-footer,
+    .card,
+    .panel-card,
+    .modal-content,
+    .dropdown-menu,
+    .list-group-item {
+        transition: background-color 0.25s ease, color 0.25s ease,
+                    border-color 0.25s ease;
+    }
+
+    /* Buttons: nudge trailing arrows + subtle press feedback. */
+    .btn .bi { transition: transform 0.2s ease; }
+    .btn:hover .bi-arrow-right { transform: translateX(4px); }
+    .btn:hover .bi-arrow-left  { transform: translateX(-4px); }
+
+    .btn:not(:disabled):active {
+        transform: translateY(1px) scale(0.985);
+        box-shadow: none;
+    }
+
+    /* Form controls: smooth focus transition. */
+    .form-control,
+    .form-select,
+    .form-check-input,
+    .input-group-text,
+    textarea.form-control {
+        transition: border-color 0.18s ease, box-shadow 0.18s ease,
+                    background-color 0.18s ease, color 0.18s ease;
+    }
+
+    /* Dropdowns / menus: gentle fade-in (opacity only — transform is
+       owned by Popper for positioning, so it must not be animated). */
+    .dropdown-menu.show,
+    .navbar-invoiceflow .nav-hover-dropdown:hover > .dropdown-menu,
+    .navbar-invoiceflow .nav-hover-dropdown:focus-within > .dropdown-menu {
+        animation: ifMenuIn 0.16s ease-out;
+    }
+}
+
+@keyframes ifMenuIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+/* Accessibility: honour the OS "reduce motion" setting for every
+   transition / animation defined anywhere in this stylesheet. */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+    }
+}
