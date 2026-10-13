@@ -2524,6 +2524,44 @@ body.app-shell {
 html[data-theme="dark"] .theme-toggle .theme-toggle__icon--dark { display: none; }
 html[data-theme="dark"] .theme-toggle .theme-toggle__icon--light { display: inline-block; }
 
+/* Optional text label (sidebar). "Dark mode" shows in light, "Light mode" in dark. */
+.theme-toggle__label { display: none; }
+.theme-toggle__label--dark { display: inline; }
+html[data-theme="dark"] .theme-toggle__label--dark { display: none; }
+html[data-theme="dark"] .theme-toggle__label--light { display: inline; }
+
+/* Sidebar variant — the sidebar stays dark navy in both themes, so the
+   control is styled as a sidebar nav item (light text on dark). */
+.sidebar-nav__theme {
+    margin-top: 12px;
+    padding: 10px 6px 2px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.theme-toggle--sidebar {
+    width: 100%;
+    height: auto;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: 9px;
+    color: rgba(255, 255, 255, 0.72);
+    font-weight: 500;
+    font-size: 0.86rem;
+    line-height: 1.2;
+}
+
+.theme-toggle--sidebar:hover,
+.theme-toggle--sidebar:focus-visible {
+    background: rgba(255, 255, 255, 0.05);
+    color: #FFFFFF;
+}
+
+.theme-toggle--sidebar .theme-toggle__icon {
+    width: 20px;
+    text-align: center;
+}
+
 /* ============================================================
    DARK THEME
    Activated by <html data-theme="dark"> (see public/js/theme.js).
