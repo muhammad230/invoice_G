@@ -207,10 +207,31 @@
         padding: 0.8rem 0.9rem 0.8rem 0;
         font-size: 0.92rem;
         color: var(--ink);
+        /* Keep typed text readable in both themes (overrides UA/autofill fill). */
+        -webkit-text-fill-color: var(--ink);
+        caret-color: var(--ink);
         outline: none;
     }
 
     .lf-field__input::placeholder { color: #9aa4af; }
+
+    /* Browser autofill (Chrome/Safari) repaints the field with its own light
+       background while the text colour stays themed — on dark that made the
+       typed email invisible. Neutralise it so it follows the theme. */
+    .lf-field__input:-webkit-autofill,
+    .lf-field__input:-webkit-autofill:hover,
+    .lf-field__input:-webkit-autofill:focus,
+    .lf-field__input:-webkit-autofill:active {
+        -webkit-text-fill-color: var(--ink);
+        caret-color: var(--ink);
+        -webkit-box-shadow: 0 0 0 1000px var(--paper) inset;
+        box-shadow: 0 0 0 1000px var(--paper) inset;
+        transition: background-color 9999s ease-in-out 0s;
+    }
+    .lf-field:focus-within .lf-field__input:-webkit-autofill {
+        -webkit-box-shadow: 0 0 0 1000px var(--white) inset;
+        box-shadow: 0 0 0 1000px var(--white) inset;
+    }
 
     .lf-field.is-invalid {
         border-color: var(--overdue);

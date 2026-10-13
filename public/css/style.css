@@ -2769,6 +2769,20 @@ html[data-theme="dark"] .input-group-text {
     color: var(--ink);
 }
 html[data-theme="dark"] .form-control::placeholder { color: var(--ink-soft); }
+
+/* Browser autofill paints a light background of its own; without this the
+   light themed text becomes invisible on it in dark mode. */
+html[data-theme="dark"] input:-webkit-autofill,
+html[data-theme="dark"] input:-webkit-autofill:hover,
+html[data-theme="dark"] input:-webkit-autofill:focus,
+html[data-theme="dark"] textarea:-webkit-autofill,
+html[data-theme="dark"] select:-webkit-autofill {
+    -webkit-text-fill-color: var(--ink);
+    caret-color: var(--ink);
+    -webkit-box-shadow: 0 0 0 1000px var(--surface-2) inset;
+    box-shadow: 0 0 0 1000px var(--surface-2) inset;
+    transition: background-color 9999s ease-in-out 0s;
+}
 html[data-theme="dark"] .form-control:focus,
 html[data-theme="dark"] .form-select:focus {
     background-color: var(--surface-2);
