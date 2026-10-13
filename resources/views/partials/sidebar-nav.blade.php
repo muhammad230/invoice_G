@@ -47,9 +47,4 @@
             </li>
         @endforeach
     </ul>
-
-    {{-- Light / dark theme switch (always reachable inside the sidebar) --}}
-    <div class="sidebar-nav__theme">
-        @include('partials.theme-toggle', ['btnClass' => 'theme-toggle--sidebar', 'withLabel' => true])
-    </div>
 </nav>
