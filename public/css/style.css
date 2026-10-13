@@ -2715,7 +2715,12 @@ html[data-theme="dark"] .dash-date-card__icon { background: color-mix(in srgb, v
 /* ---------- Bootstrap helpers used by views ---------- */
 html[data-theme="dark"] .bg-white { background-color: var(--surface) !important; }
 html[data-theme="dark"] .bg-light { background-color: var(--surface-2) !important; }
-html[data-theme="dark"] .text-muted { color: var(--ink-soft) !important; }
+html[data-theme="dark"] .text-muted,
+html[data-theme="dark"] .text-secondary,
+html[data-theme="dark"] .text-body-secondary,
+html[data-theme="dark"] .text-body-tertiary,
+html[data-theme="dark"] .text-body { color: var(--ink-soft) !important; }
+html[data-theme="dark"] .form-text { color: var(--ink-soft) !important; }
 html[data-theme="dark"] hr { border-color: var(--border-soft); }
 html[data-theme="dark"] .btn-close:not(.app-offcanvas__close) { filter: invert(1) grayscale(1) brightness(1.8); }
 html[data-theme="dark"] .accordion-button::after { filter: invert(1) brightness(1.6); }
