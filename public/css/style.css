@@ -13,6 +13,12 @@
     --sage: #3F6B50;
     --overdue: #B3372F;
     --white: #FFFFFF;
+    --surface: #FFFFFF;          /* card / panel surface */
+    --surface-2: #F3EEE4;        /* inputs, nested surfaces */
+    --surface-strong: #12202E;   /* navy bars, solid buttons */
+    --border: rgba(18, 32, 46, 0.12);
+    --border-soft: rgba(18, 32, 46, 0.08);
+    --hover: rgba(18, 32, 46, 0.04);
     --shadow-sm: 0 2px 8px rgba(18, 32, 46, 0.06);
     --shadow-md: 0 8px 24px rgba(18, 32, 46, 0.08);
     --shadow-lg: 0 16px 48px rgba(18, 32, 46, 0.12);
@@ -2763,4 +2769,36 @@ html[data-theme="dark"] .pagination {
     --bs-pagination-active-border-color: var(--surface-strong);
     --bs-pagination-disabled-bg: var(--surface);
     --bs-pagination-disabled-color: var(--ink-soft);
+}
+
+/* ---------- Generic Bootstrap cards (used across many views) ---------- */
+html[data-theme="dark"] .card {
+    --bs-card-bg: var(--surface);
+    --bs-card-border-color: var(--border-soft);
+    background-color: var(--surface);
+    color: var(--ink);
+}
+html[data-theme="dark"] .card-header,
+html[data-theme="dark"] .card-footer {
+    background-color: var(--surface-2);
+    border-color: var(--border-soft);
+    color: var(--ink);
+}
+/* Dashboard panel headers read as part of the panel surface. */
+html[data-theme="dark"] .panel-card .card-header,
+html[data-theme="dark"] .panel-card .card-footer {
+    background-color: transparent;
+}
+html[data-theme="dark"] .card-body { color: var(--ink); }
+html[data-theme="dark"] .card-title,
+html[data-theme="dark"] .card-text { color: var(--ink); }
+html[data-theme="dark"] .list-group-item {
+    background-color: var(--surface);
+    border-color: var(--border-soft);
+    color: var(--ink);
+}
+html[data-theme="dark"] .list-group-item-action:hover,
+html[data-theme="dark"] .list-group-item-action:focus {
+    background-color: var(--hover);
+    color: var(--ink);
 }

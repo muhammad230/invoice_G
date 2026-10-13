@@ -532,7 +532,7 @@
                             {{-- Totals summary in the form (right-aligned list) --}}
                             <div class="row justify-content-end">
                                 <div class="col-md-8 col-lg-7">
-                                    <div class="p-3" style="background: rgba(18,32,46,0.03); border-radius: var(--radius-sm);">
+                                    <div class="p-3" style="background: var(--hover); border-radius: var(--radius-sm);">
                                         <div class="d-flex justify-content-between mb-2">
                                             <span style="color: var(--ink-soft);">Subtotal</span>
                                             <span id="subtotal_display" style="font-variant-numeric: tabular-nums;">0.00</span>
@@ -545,7 +545,7 @@
                                             <span style="color: var(--ink-soft);">Discount</span>
                                             <span id="discount_display" style="font-variant-numeric: tabular-nums;">0.00</span>
                                         </div>
-                                        <div class="d-flex justify-content-between pt-2" style="border-top: 1px solid rgba(18,32,46,0.1);">
+                                        <div class="d-flex justify-content-between pt-2" style="border-top: 1px solid var(--border);">
                                             <strong style="font-family: 'Fraunces', Georgia, serif; font-size: 1.125rem;">Total</strong>
                                             <strong id="total_display"
                                                     style="font-family: 'Fraunces', Georgia, serif; font-size: 1.375rem; color: var(--ink); font-variant-numeric: tabular-nums;">
@@ -724,7 +724,7 @@
                         <div class="mb-4">
                             <table class="table table-sm mb-0" id="p_items_table" style="border-collapse: collapse; width: 100%;">
                                 <thead>
-                                    <tr style="border-bottom: 1px solid rgba(18,32,46,0.12);">
+                                    <tr style="border-bottom: 1px solid var(--border);">
                                         <th scope="col" style="text-align: center; padding: 0.5rem 0.25rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft); width: 8%;">#</th>
                                         <th scope="col" style="text-align: left; padding: 0.5rem 0.25rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft);">Description</th>
                                         <th scope="col" style="text-align: right; padding: 0.5rem 0.25rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft); width: 14%;">Qty</th>
@@ -764,7 +764,7 @@
                         <div id="p_notes_wrap">
                             <div style="font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); margin-bottom: 0.375rem;">Notes</div>
                             <div id="p_notes" style="color: var(--ink-soft); font-size: 0.875rem; white-space: pre-line; display: none;"></div>
-                            <div id="p_notes_placeholder" style="color: rgba(74,88,102,0.4); font-size: 0.875rem; font-style: italic;">
+                            <div id="p_notes_placeholder" style="color: var(--ink-soft); opacity: 0.55; font-size: 0.875rem; font-style: italic;">
                                 No notes added.
                             </div>
                         </div>
@@ -781,7 +781,7 @@
 
                         {{-- PREVIEW: SIGNATURE --}}
                         <div id="p_signature_wrap" class="mt-4 text-end" style="display: none;">
-                            <div style="border-top: 1px solid rgba(18,32,46,0.15); display: inline-block; padding-top: 0.375rem; min-width: 180px; text-align: center;">
+                            <div style="border-top: 1px solid var(--border); display: inline-block; padding-top: 0.375rem; min-width: 180px; text-align: center;">
                                 <div id="p_signature_name" class="fw-bold" style="font-size: 0.875rem;"></div>
                                 <div id="p_signature_title" style="color: var(--ink-soft); font-size: 0.75rem;"></div>
                             </div>
