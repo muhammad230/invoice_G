@@ -22,7 +22,7 @@
                             <span class="lf-brand__icon" aria-hidden="true">
                                 <i class="bi bi-check2"></i>
                             </span>
-                            InvoiceeFlow
+                            InvoiceFlow
                         </a>
 
                         <h2 class="lf-panel__headline">
